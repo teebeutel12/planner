@@ -1,0 +1,9 @@
+{
+  "name": "Planner",
+  "short_name": "Planner",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#0f172a",
+  "description": "Familienplaner mit Kalender, Wunschlisten, Einkaufsliste und Erinnerungen."
+}
