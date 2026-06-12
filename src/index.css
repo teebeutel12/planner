@@ -91,6 +91,40 @@ p {
     color: #b9c7d8;
 }
 
+.content-stack-sm {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.compact-card {
+    padding-top: 1.2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.summary-card,
+.soft-column {
+    border-radius: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(30, 41, 59, 0.42);
+    padding: 1rem;
+}
+
+.summary-card strong {
+    display: block;
+    font-size: 1.9rem;
+    line-height: 1.1;
+    margin-bottom: 0.35rem;
+}
+
+.stacked-mobile {
+    align-items: flex-start;
+}
+
 #root {
     min-height: 100vh;
 }
@@ -902,7 +936,9 @@ body[data-theme="light"] .calendar-chip-button,
 body[data-theme="light"] code,
 body[data-theme="light"] .checkbox-tile,
 body[data-theme="light"] .topbar,
-body[data-theme="light"] .tab-shell {
+body[data-theme="light"] .tab-shell,
+body[data-theme="light"] .summary-card,
+body[data-theme="light"] .soft-column {
     background: rgba(255, 255, 255, 0.92);
     color: #122033;
     border-color: rgba(148, 163, 184, 0.24);

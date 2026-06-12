@@ -92,8 +92,12 @@ export function WishListPanel({
 
   return (
     <div className="dashboard-grid wishes-layout">
-      <section className="card">
+      <section className="card compact-card">
+        <span className="eyebrow">Wünsche</span>
         <h2>Wunsch hinzufügen</h2>
+        <p className="muted-text">
+          Wünsche pro Person sammeln und später abhaken.
+        </p>
         <form className="form-stack" onSubmit={handleSubmit}>
           <label>
             Für wen?
@@ -143,8 +147,13 @@ export function WishListPanel({
       </section>
 
       <section className="card overview-full-width">
-        <div className="section-header">
-          <h2>Wunschlisten</h2>
+        <div className="section-header stacked-mobile">
+          <div>
+            <h2>Wunschlisten</h2>
+            <p className="muted-text">
+              Farbig sortiert nach Personen mit klarer Statusansicht.
+            </p>
+          </div>
           <span className="pill">
             {wishes.filter((wish) => !wish.is_fulfilled).length} offen
           </span>

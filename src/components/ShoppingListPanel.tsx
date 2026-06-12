@@ -72,8 +72,12 @@ export function ShoppingListPanel({
 
   return (
     <div className="dashboard-grid shopping-layout">
-      <section className="card">
+      <section className="card compact-card">
+        <span className="eyebrow">Einkauf</span>
         <h2>Zur Einkaufsliste hinzufügen</h2>
+        <p className="muted-text">
+          Lege Einträge an und ordne sie direkt einer Person zu.
+        </p>
         <form className="form-stack" onSubmit={handleSubmit}>
           <label>
             Eintrag
@@ -114,8 +118,13 @@ export function ShoppingListPanel({
       </section>
 
       <section className="card overview-full-width">
-        <div className="section-header">
-          <h2>Einkaufsliste</h2>
+        <div className="section-header stacked-mobile">
+          <div>
+            <h2>Einkaufsliste</h2>
+            <p className="muted-text">
+              Alles offen, erledigt oder gerade in Bearbeitung.
+            </p>
+          </div>
           <span className="pill">
             {items.filter((item) => !item.is_done).length} offen
           </span>

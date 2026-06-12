@@ -90,8 +90,12 @@ export function FamilyManager({
 
   return (
     <div className="dashboard-grid family-layout">
-      <section className="card">
+      <section className="card compact-card">
+        <span className="eyebrow">Schnellzugriff</span>
         <h2>Mein Profil</h2>
+        <p className="muted-text">
+          Name und Farbe direkt im Familienbereich anpassen.
+        </p>
         <form className="form-stack" onSubmit={handleProfileSave}>
           <label>
             Name
@@ -116,7 +120,16 @@ export function FamilyManager({
       </section>
 
       <section className="card">
-        <h2>{family ? "Familienkonto" : "Familienkonto verknüpfen"}</h2>
+        <div className="section-header stacked-mobile">
+          <div>
+            <h2>{family ? "Familienkonto" : "Familienkonto verknüpfen"}</h2>
+            <p className="muted-text">
+              {family
+                ? "Einladungscode, Rolle und Familienstatus auf einen Blick."
+                : "Erstelle einen privaten Bereich oder verknüpfe dich mit einer bestehenden Familie."}
+            </p>
+          </div>
+        </div>
         {family ? (
           <div className="family-summary">
             <div>
@@ -192,7 +205,14 @@ export function FamilyManager({
 
       {family && isOwner && transferableMembers.length > 0 && (
         <section className="card">
-          <h2>Eigentümer übertragen</h2>
+          <div className="section-header stacked-mobile">
+            <div>
+              <h2>Eigentümer übertragen</h2>
+              <p className="muted-text">
+                Nur Owner können Verantwortung an andere Mitglieder übergeben.
+              </p>
+            </div>
+          </div>
           <p className="muted-text">
             Übertrage das Familienkonto an ein anderes Mitglied, damit du die
             Familie später selbst verlassen kannst.
@@ -219,7 +239,7 @@ export function FamilyManager({
       )}
 
       <section className="card family-members">
-        <div className="section-header">
+        <div className="section-header stacked-mobile">
           <h2>Personen</h2>
           <span className="pill">{members.length}</span>
         </div>

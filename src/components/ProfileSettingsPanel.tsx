@@ -174,7 +174,11 @@ export function ProfileSettingsPanel({
       </section>
 
       <section className="card">
+        <span className="eyebrow">Profil</span>
         <h2>Persönliche Daten</h2>
+        <p className="muted-text">
+          Dein öffentlicher Name, dein Avatar und die Darstellung in der App.
+        </p>
         <form className="form-stack" onSubmit={handleSubmit}>
           <label>
             Anzeigename
@@ -235,8 +239,11 @@ export function ProfileSettingsPanel({
         </form>
       </section>
 
-      <section className="card">
+      <section className="card compact-card">
         <h2>Sicherheit</h2>
+        <p className="muted-text">
+          Ändere dein Passwort direkt in deinem Account.
+        </p>
         <form className="form-stack" onSubmit={handlePasswordSubmit}>
           <label>
             Neues Passwort
@@ -265,7 +272,7 @@ export function ProfileSettingsPanel({
         </form>
       </section>
 
-      <section className="card">
+      <section className="card compact-card">
         <h2>Benachrichtigungen</h2>
         <div className="form-stack">
           <div>
@@ -290,7 +297,7 @@ export function ProfileSettingsPanel({
         </div>
       </section>
 
-      <section className="card">
+      <section className="card compact-card">
         <h2>Familienkonto</h2>
         <div className="form-stack">
           <p className="muted-text">
@@ -315,7 +322,7 @@ export function ProfileSettingsPanel({
         </div>
       </section>
 
-      <section className="card">
+      <section className="card compact-card">
         <h2>Account löschen</h2>
         <div className="form-stack">
           <p className="muted-text">
