@@ -4,6 +4,7 @@ import { AuthView } from "./components/AuthView";
 import { CalendarBoard } from "./components/CalendarBoard";
 import { FamilyManager } from "./components/FamilyManager";
 import { OverviewPanel } from "./components/OverviewPanel";
+import { ProfileSettingsPanel } from "./components/ProfileSettingsPanel";
 import { ShoppingListPanel } from "./components/ShoppingListPanel";
 import { WishListPanel } from "./components/WishListPanel";
 import {
@@ -19,8 +20,10 @@ import {
   EventItem,
   Family,
   Profile,
+  ProfileSettingsInput,
   ShoppingItem,
   ShoppingItemInput,
+  ThemePreference,
   WishInput,
   WishItem,
 } from "./types";
@@ -41,6 +44,7 @@ const TABS: { id: AppTab; label: string }[] = [
   { id: "shopping", label: "Einkaufsliste" },
   { id: "wishes", label: "Wunschlisten" },
   { id: "family", label: "Familie" },
+  { id: "profile", label: "Profil" },
 ];
 
 function extractErrorMessage(error: unknown) {
@@ -137,6 +141,8 @@ async function ensureProfile(user: User): Promise<Profile> {
       email: user.email ?? "",
       display_name: displayName,
       color,
+      avatar_url: null,
+      theme_preference: "system",
     })
     .select("*")
     .single();
@@ -347,6 +353,40 @@ export default function App() {
     });
   }, [events, currentProfile, notificationPermission]);
 
+  useEffect(() => {
+    const preference = currentProfile?.theme_preference ?? "system";
+
+    const resolveTheme = () => {
+      if (preference === "system") {
+        return window.matchMedia("(prefers-color-scheme: light)").matches
+          ? "light"
+          : "dark";
+      }
+
+      return preference;
+    };
+
+    const applyTheme = () => {
+      const resolvedTheme = resolveTheme();
+      document.documentElement.dataset.theme = resolvedTheme;
+      document.body.dataset.theme = resolvedTheme;
+    };
+
+    applyTheme();
+
+    if (preference !== "system") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+    const listener = () => applyTheme();
+    mediaQuery.addEventListener("change", listener);
+
+    return () => {
+      mediaQuery.removeEventListener("change", listener);
+    };
+  }, [currentProfile?.theme_preference]);
+
   async function refreshData() {
     if (!profile) {
       return;
@@ -535,7 +575,7 @@ export default function App() {
     }, "Familienkonto erfolgreich verknüpft.");
   }
 
-  async function handleUpdateProfile(displayName: string, color: string) {
+  async function handleUpdateProfile(input: ProfileSettingsInput) {
     if (!profile || !supabase) {
       return;
     }
@@ -543,18 +583,122 @@ export default function App() {
     const client = supabase;
 
     await runAction(async () => {
+      const payload = {
+        display_name: input.displayName.trim(),
+        color: input.color,
+        avatar_url: input.avatarUrl.trim() || null,
+        theme_preference: input.themePreference,
+      } satisfies {
+        display_name: string;
+        color: string;
+        avatar_url: string | null;
+        theme_preference: ThemePreference;
+      };
+
       const { error } = await client
         .from("profiles")
-        .update({ display_name: displayName, color })
+        .update(payload)
         .eq("id", profile.id);
 
       if (error) {
         throw error;
       }
 
-      setProfile({ ...profile, display_name: displayName, color });
+      setProfile({ ...profile, ...payload });
       await refreshData();
     }, "Profil aktualisiert.");
+  }
+
+  async function handleQuickProfileUpdate(displayName: string, color: string) {
+    await handleUpdateProfile({
+      displayName,
+      color,
+      avatarUrl: currentProfile?.avatar_url ?? "",
+      themePreference: currentProfile?.theme_preference ?? "system",
+    });
+  }
+
+  async function handleChangePassword(newPassword: string) {
+    if (!supabase) {
+      return;
+    }
+
+    const client = supabase;
+
+    await runAction(async () => {
+      const { error } = await client.auth.updateUser({ password: newPassword });
+      if (error) {
+        throw error;
+      }
+    }, "Passwort aktualisiert.");
+  }
+
+  async function handleLeaveFamily() {
+    if (!profile || !family || !supabase) {
+      return;
+    }
+
+    const client = supabase;
+    const isOwner = family.owner_id === profile.id;
+
+    await runAction(
+      async () => {
+        if (isOwner && members.length > 1) {
+          throw new Error(
+            "Du bist Eigentümer dieses Familienkontos. Entferne erst andere Mitglieder oder übertrage das Konto, bevor du es verlässt.",
+          );
+        }
+
+        if (isOwner) {
+          const { error } = await client
+            .from("families")
+            .delete()
+            .eq("id", family.id);
+          if (error) {
+            throw error;
+          }
+        } else {
+          const { error } = await client
+            .from("family_members")
+            .delete()
+            .eq("family_id", family.id)
+            .eq("profile_id", profile.id);
+
+          if (error) {
+            throw error;
+          }
+        }
+
+        await refreshData();
+        setActiveTab("family");
+      },
+      isOwner ? "Familienkonto entfernt." : "Familienkonto verlassen.",
+    );
+  }
+
+  async function handleDeleteAccount() {
+    if (!supabase) {
+      return;
+    }
+
+    const client = supabase;
+
+    await runAction(async () => {
+      const { error } = await client.rpc("delete_current_user");
+      if (error) {
+        throw error;
+      }
+
+      await client.auth.signOut();
+      setSession(null);
+      setProfile(null);
+      setFamily(null);
+      setMembers([]);
+      setEvents([]);
+      setShoppingItems([]);
+      setWishes([]);
+      setActiveTab("family");
+    }, "Account gelöscht.");
   }
 
   async function handleCreateEvent(input: EventFormInput) {
@@ -932,7 +1076,7 @@ export default function App() {
               busy={busy}
               onCreateFamily={handleCreateFamily}
               onJoinFamily={handleJoinFamily}
-              onUpdateProfile={handleUpdateProfile}
+              onUpdateProfile={handleQuickProfileUpdate}
             />
           )
         : null}
@@ -978,6 +1122,21 @@ export default function App() {
           onUpdateWish={handleUpdateWish}
           onDeleteWish={handleDeleteWish}
           onToggleFulfilled={handleToggleWishFulfilled}
+        />
+      )}
+
+      {currentProfile && activeTab === "profile" && (
+        <ProfileSettingsPanel
+          currentProfile={currentProfile}
+          family={family}
+          members={members}
+          busy={busy}
+          notificationPermission={notificationPermission}
+          onEnableNotifications={handleEnableNotifications}
+          onUpdateProfile={handleUpdateProfile}
+          onChangePassword={handleChangePassword}
+          onLeaveFamily={handleLeaveFamily}
+          onDeleteAccount={handleDeleteAccount}
         />
       )}
     </div>

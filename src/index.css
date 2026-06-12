@@ -496,7 +496,9 @@ ol {
 .card-actions,
 .modal-actions,
 .inline-form-grid,
-.modal-details {
+.modal-details,
+.profile-hero,
+.color-settings-row {
     display: flex;
     gap: 0.75rem;
     flex-wrap: wrap;
@@ -594,6 +596,41 @@ ol {
     grid-column: span 6;
 }
 
+.profile-full-width {
+    grid-column: 1 / -1 !important;
+}
+
+.profile-hero {
+    align-items: center;
+}
+
+.profile-avatar {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+.profile-avatar-image {
+    border: 2px solid rgba(148, 163, 184, 0.24);
+}
+
+.color-settings-row {
+    align-items: center;
+}
+
+.color-settings-row input[type="color"] {
+    max-width: 4.5rem;
+    padding: 0.3rem;
+}
+
 .inline-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -644,6 +681,64 @@ ol {
     }
 }
 
+body[data-theme="light"] {
+    background:
+        radial-gradient(
+            circle at top,
+            rgba(56, 189, 248, 0.12),
+            transparent 28%
+        ),
+        linear-gradient(180deg, #f5f8fc 0%, #eaf1f8 100%);
+}
+
+body[data-theme="light"] {
+    color: #122033;
+}
+
+body[data-theme="light"] .card,
+body[data-theme="light"] .list-card,
+body[data-theme="light"] .day-agenda-item,
+body[data-theme="light"] .calendar-day,
+body[data-theme="light"] .calendar-chip,
+body[data-theme="light"] .calendar-chip-button,
+body[data-theme="light"] code,
+body[data-theme="light"] .checkbox-tile {
+    background: rgba(255, 255, 255, 0.92);
+    color: #122033;
+    border-color: rgba(148, 163, 184, 0.24);
+}
+
+body[data-theme="light"] p,
+body[data-theme="light"] .muted-text,
+body[data-theme="light"] .muted-label,
+body[data-theme="light"] .calendar-day-number,
+body[data-theme="light"] .calendar-day-count,
+body[data-theme="light"] .tab,
+body[data-theme="light"] .secondary-button,
+body[data-theme="light"] .muted-button,
+body[data-theme="light"] .status-pill {
+    color: #334155;
+}
+
+body[data-theme="light"] input,
+body[data-theme="light"] textarea,
+body[data-theme="light"] select {
+    background: white;
+    color: #122033;
+    border-color: rgba(148, 163, 184, 0.32);
+}
+
+body[data-theme="light"] .secondary-button,
+body[data-theme="light"] .muted-button,
+body[data-theme="light"] .tab,
+body[data-theme="light"] .status-pill {
+    background: rgba(226, 232, 240, 0.9);
+}
+
+body[data-theme="light"] a {
+    color: #2563eb;
+}
+
 @media (max-width: 640px) {
     .app-shell,
     .auth-shell,
@@ -657,7 +752,9 @@ ol {
     .list-card,
     .header-actions,
     .card-actions,
-    .modal-actions {
+    .modal-actions,
+    .profile-hero,
+    .color-settings-row {
         flex-direction: column;
         align-items: stretch;
     }

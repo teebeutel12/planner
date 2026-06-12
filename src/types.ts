@@ -1,10 +1,20 @@
-export type AppTab = "overview" | "calendar" | "shopping" | "wishes" | "family";
+export type AppTab =
+  | "overview"
+  | "calendar"
+  | "shopping"
+  | "wishes"
+  | "family"
+  | "profile";
+
+export type ThemePreference = "system" | "light" | "dark";
 
 export interface Profile {
   id: string;
   email: string;
   display_name: string;
   color: string;
+  avatar_url: string | null;
+  theme_preference: ThemePreference;
 }
 
 export interface Family {
@@ -71,4 +81,11 @@ export interface WishInput {
   title: string;
   description: string;
   link: string;
+}
+
+export interface ProfileSettingsInput {
+  displayName: string;
+  color: string;
+  avatarUrl: string;
+  themePreference: ThemePreference;
 }

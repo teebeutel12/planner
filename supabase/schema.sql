@@ -5,6 +5,8 @@ create table if not exists public.profiles (
   email text not null,
   display_name text not null,
   color text not null default '#3b82f6',
+  avatar_url text,
+  theme_preference text not null default 'system' check (theme_preference in ('system', 'light', 'dark')),
   created_at timestamptz not null default timezone('utc', now())
 );
 
@@ -98,6 +100,11 @@ for update
 using (auth.uid() = owner_id)
 with check (auth.uid() = owner_id);
 
+create policy "family owners can delete family"
+on public.families
+for delete
+using (auth.uid() = owner_id);
+
 create policy "authenticated users can read memberships"
 on public.family_members
 for select
@@ -107,6 +114,11 @@ create policy "users can join as themselves"
 on public.family_members
 for insert
 with check (auth.uid() = profile_id);
+
+create policy "users can leave own membership"
+on public.family_members
+for delete
+using (auth.uid() = profile_id);
 
 create policy "family members can read events"
 on public.events
@@ -248,3 +260,21 @@ using (
     where fm.family_id = wishes.family_id and fm.profile_id = auth.uid()
   )
 );
+
+create or replace function public.delete_current_user()
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+revoke all on function public.delete_current_user() from public;
+grant execute on function public.delete_current_user() to authenticated;

@@ -1,5 +1,5 @@
-import { FormEvent, useState } from 'react';
-import { Family, Profile } from '../types';
+import { FormEvent, useEffect, useState } from "react";
+import { Family, Profile } from "../types";
 
 interface FamilyManagerProps {
   family: Family | null;
@@ -20,21 +20,26 @@ export function FamilyManager({
   onJoinFamily,
   onUpdateProfile,
 }: FamilyManagerProps) {
-  const [familyName, setFamilyName] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
+  const [familyName, setFamilyName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [displayName, setDisplayName] = useState(currentProfile.display_name);
   const [color, setColor] = useState(currentProfile.color);
+
+  useEffect(() => {
+    setDisplayName(currentProfile.display_name);
+    setColor(currentProfile.color);
+  }, [currentProfile.color, currentProfile.display_name]);
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await onCreateFamily(familyName);
-    setFamilyName('');
+    setFamilyName("");
   }
 
   async function handleJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await onJoinFamily(inviteCode);
-    setInviteCode('');
+    setInviteCode("");
   }
 
   async function handleProfileSave(event: FormEvent<HTMLFormElement>) {
@@ -70,7 +75,7 @@ export function FamilyManager({
       </section>
 
       <section className="card">
-        <h2>{family ? 'Familienkonto' : 'Familienkonto verknüpfen'}</h2>
+        <h2>{family ? "Familienkonto" : "Familienkonto verknüpfen"}</h2>
         {family ? (
           <div className="family-summary">
             <div>
@@ -112,12 +117,18 @@ export function FamilyManager({
                 Einladungscode
                 <input
                   value={inviteCode}
-                  onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
+                  onChange={(event) =>
+                    setInviteCode(event.target.value.toUpperCase())
+                  }
                   placeholder="ABC12345"
                   required
                 />
               </label>
-              <button className="secondary-button" type="submit" disabled={busy}>
+              <button
+                className="secondary-button"
+                type="submit"
+                disabled={busy}
+              >
                 Mit Familie verknüpfen
               </button>
             </form>
@@ -128,7 +139,9 @@ export function FamilyManager({
       <section className="card family-members">
         <h2>Personen</h2>
         {members.length === 0 ? (
-          <p className="muted-text">Sobald Personen verbunden sind, erscheinen sie hier.</p>
+          <p className="muted-text">
+            Sobald Personen verbunden sind, erscheinen sie hier.
+          </p>
         ) : (
           <div className="person-list">
             {members.map((member) => (

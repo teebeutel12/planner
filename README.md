@@ -11,6 +11,7 @@ Eine Familien-App als MVP mit diesen Funktionen:
 - Browser-Erinnerungen für Termine
 - Cloud-Speicherung mit Supabase
 - farbige Kennzeichnung je Person
+- Profileinstellungen mit Avatar, Theme, Passwort ändern, Familie verlassen und Account löschen
 
 ## Tech-Stack
 
@@ -23,15 +24,16 @@ Eine Familien-App als MVP mit diesen Funktionen:
 1. Ein Supabase-Projekt erstellen.
 2. Für neue Projekte die Datei `supabase/schema.sql` im `SQL Editor` ausführen.
 3. Wenn dein Projekt das alte Schema schon hat, zusätzlich `supabase/migrations/20260612_planner_upgrade.sql` ausführen.
-4. `.env.example` nach `.env` kopieren.
-5. In `.env` die Werte für `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` eintragen.
-6. Abhängigkeiten installieren:
+4. Für die neuen Profileinstellungen zusätzlich `supabase/migrations/20260612_profile_settings_and_account.sql` ausführen.
+5. `.env.example` nach `.env` kopieren.
+6. In `.env` die Werte für `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` eintragen.
+7. Abhängigkeiten installieren:
 
    ```bash
    npm install
    ```
 
-7. Entwicklungsserver starten:
+8. Entwicklungsserver starten:
 
    ```bash
    npm run dev
