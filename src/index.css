@@ -414,6 +414,13 @@ code {
     gap: 1rem;
 }
 
+.invite-code-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
 .calendar-weekdays,
 .calendar-grid {
     display: grid;

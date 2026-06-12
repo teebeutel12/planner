@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Family, Profile } from "../types";
 
 interface FamilyManagerProps {
@@ -9,6 +9,9 @@ interface FamilyManagerProps {
   onCreateFamily: (name: string) => Promise<void>;
   onJoinFamily: (inviteCode: string) => Promise<void>;
   onUpdateProfile: (displayName: string, color: string) => Promise<void>;
+  onCopyInviteCode: (inviteCode: string) => Promise<void>;
+  onTransferOwnership: (memberId: string) => Promise<void>;
+  onRemoveMember: (member: Profile) => Promise<void>;
 }
 
 export function FamilyManager({
@@ -19,6 +22,9 @@ export function FamilyManager({
   onCreateFamily,
   onJoinFamily,
   onUpdateProfile,
+  onCopyInviteCode,
+  onTransferOwnership,
+  onRemoveMember,
 }: FamilyManagerProps) {
   const [familyName, setFamilyName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -29,6 +35,12 @@ export function FamilyManager({
     setDisplayName(currentProfile.display_name);
     setColor(currentProfile.color);
   }, [currentProfile.color, currentProfile.display_name]);
+
+  const isOwner = family?.owner_id === currentProfile.id;
+  const transferableMembers = useMemo(
+    () => members.filter((member) => member.id !== currentProfile.id),
+    [currentProfile.id, members],
+  );
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,6 +57,35 @@ export function FamilyManager({
   async function handleProfileSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await onUpdateProfile(displayName, color);
+  }
+
+  async function handleRemove(member: Profile) {
+    const confirmed = window.confirm(
+      `${member.display_name} wirklich aus der Familie entfernen?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    await onRemoveMember(member);
+  }
+
+  async function handleTransfer(memberId: string) {
+    const member = members.find((entry) => entry.id === memberId);
+    if (!member) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Willst du ${member.display_name} wirklich zum neuen Eigentümer machen?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    await onTransferOwnership(memberId);
   }
 
   return (
@@ -84,12 +125,25 @@ export function FamilyManager({
             </div>
             <div>
               <span className="muted-label">Einladungscode</span>
-              <code>{family.invite_code}</code>
+              <div className="invite-code-row">
+                <code>{family.invite_code}</code>
+                <button
+                  className="secondary-button"
+                  onClick={() => void onCopyInviteCode(family.invite_code)}
+                  type="button"
+                >
+                  Kopieren
+                </button>
+              </div>
             </div>
             <p className="muted-text">
               Teile den Code mit Partner oder Familie, damit sie demselben
               Familienbereich beitreten können.
             </p>
+            <div>
+              <span className="muted-label">Rolle</span>
+              <strong>{isOwner ? "Eigentümer" : "Mitglied"}</strong>
+            </div>
           </div>
         ) : (
           <div className="setup-stack">
@@ -136,27 +190,81 @@ export function FamilyManager({
         )}
       </section>
 
+      {family && isOwner && transferableMembers.length > 0 && (
+        <section className="card">
+          <h2>Eigentümer übertragen</h2>
+          <p className="muted-text">
+            Übertrage das Familienkonto an ein anderes Mitglied, damit du die
+            Familie später selbst verlassen kannst.
+          </p>
+          <div className="list-stack">
+            {transferableMembers.map((member) => (
+              <div className="list-card" key={`owner-${member.id}`}>
+                <div>
+                  <strong>{member.display_name}</strong>
+                  <p>{member.email}</p>
+                </div>
+                <button
+                  className="secondary-button"
+                  disabled={busy}
+                  onClick={() => void handleTransfer(member.id)}
+                  type="button"
+                >
+                  Zum Owner machen
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="card family-members">
-        <h2>Personen</h2>
+        <div className="section-header">
+          <h2>Personen</h2>
+          <span className="pill">{members.length}</span>
+        </div>
         {members.length === 0 ? (
           <p className="muted-text">
             Sobald Personen verbunden sind, erscheinen sie hier.
           </p>
         ) : (
-          <div className="person-list">
-            {members.map((member) => (
-              <div className="person-row" key={member.id}>
-                <span
-                  className="color-dot"
-                  style={{ backgroundColor: member.color }}
-                  aria-hidden="true"
-                />
-                <div>
-                  <strong>{member.display_name}</strong>
-                  <p>{member.email}</p>
+          <div className="list-stack">
+            {members.map((member) => {
+              const memberIsOwner = family?.owner_id === member.id;
+              const isCurrentUser = member.id === currentProfile.id;
+
+              return (
+                <div className="list-card" key={member.id}>
+                  <div className="person-row">
+                    <span
+                      className="color-dot"
+                      style={{ backgroundColor: member.color }}
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <strong>
+                        {member.display_name}
+                        {isCurrentUser ? " (du)" : ""}
+                      </strong>
+                      <p>{member.email}</p>
+                    </div>
+                  </div>
+                  <div className="card-actions compact-actions">
+                    {memberIsOwner && <span className="pill">Owner</span>}
+                    {isOwner && !memberIsOwner && (
+                      <button
+                        className="danger-button"
+                        disabled={busy}
+                        onClick={() => void handleRemove(member)}
+                        type="button"
+                      >
+                        Entfernen
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

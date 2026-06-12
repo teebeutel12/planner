@@ -771,6 +771,70 @@ export default function App() {
     });
   }
 
+  async function handleCopyInviteCode(inviteCode: string) {
+    try {
+      await navigator.clipboard.writeText(inviteCode);
+      setSuccessMessage("Einladungscode kopiert.");
+      setErrorMessage(null);
+    } catch {
+      setErrorMessage("Der Einladungscode konnte nicht kopiert werden.");
+      setSuccessMessage(null);
+    }
+  }
+
+  async function handleTransferOwnership(memberId: string) {
+    if (!profile || !family || !supabase) {
+      return;
+    }
+
+    const client = supabase;
+
+    await runAction(async () => {
+      if (family.owner_id !== profile.id) {
+        throw new Error(
+          "Nur der aktuelle Eigentümer kann das Familienkonto übertragen.",
+        );
+      }
+
+      const { error } = await client
+        .from("families")
+        .update({ owner_id: memberId })
+        .eq("id", family.id);
+
+      if (error) {
+        throw error;
+      }
+
+      await refreshData();
+    }, "Eigentümer erfolgreich übertragen.");
+  }
+
+  async function handleRemoveMember(member: Profile) {
+    if (!profile || !family || !supabase) {
+      return;
+    }
+
+    const client = supabase;
+
+    await runAction(async () => {
+      if (family.owner_id !== profile.id) {
+        throw new Error("Nur der Eigentümer kann Mitglieder entfernen.");
+      }
+
+      const { error } = await client
+        .from("family_members")
+        .delete()
+        .eq("family_id", family.id)
+        .eq("profile_id", member.id);
+
+      if (error) {
+        throw error;
+      }
+
+      await refreshData();
+    }, `${member.display_name} wurde aus der Familie entfernt.`);
+  }
+
   async function handleChangePassword(newPassword: string) {
     if (!supabase) {
       return;
@@ -1287,6 +1351,9 @@ export default function App() {
               onCreateFamily={handleCreateFamily}
               onJoinFamily={handleJoinFamily}
               onUpdateProfile={handleQuickProfileUpdate}
+              onCopyInviteCode={handleCopyInviteCode}
+              onTransferOwnership={handleTransferOwnership}
+              onRemoveMember={handleRemoveMember}
             />
           )
         : null}
