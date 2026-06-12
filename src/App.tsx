@@ -55,6 +55,54 @@ function extractErrorMessage(error: unknown) {
   return "Es ist ein unerwarteter Fehler aufgetreten.";
 }
 
+function getNotificationStatusLabel(permission: NotificationSupportState) {
+  if (permission === "granted") {
+    return "Aktiv";
+  }
+
+  if (permission === "denied") {
+    return "Blockiert";
+  }
+
+  if (permission === "unsupported") {
+    return "Kein Push";
+  }
+
+  return "Aus";
+}
+
+function getNotificationStatusClass(permission: NotificationSupportState) {
+  if (permission === "granted") {
+    return "status-pill is-active";
+  }
+
+  if (permission === "denied") {
+    return "status-pill is-blocked";
+  }
+
+  if (permission === "unsupported") {
+    return "status-pill is-unsupported";
+  }
+
+  return "status-pill";
+}
+
+function getNotificationButtonClass(permission: NotificationSupportState) {
+  if (permission === "granted") {
+    return "icon-button is-active";
+  }
+
+  if (permission === "denied") {
+    return "icon-button is-blocked";
+  }
+
+  if (permission === "unsupported") {
+    return "icon-button is-unsupported";
+  }
+
+  return "icon-button";
+}
+
 function pickColor(seed: string) {
   const value = Array.from(seed).reduce(
     (sum, char) => sum + char.charCodeAt(0),
@@ -1016,23 +1064,44 @@ export default function App() {
           </p>
         </div>
         <div className="header-actions">
-          <span className="status-pill">
-            Erinnerungen:{" "}
-            {notificationPermission === "granted"
-              ? "aktiv"
-              : notificationPermission === "unsupported"
-                ? "nicht unterstützt"
-                : "inaktiv"}
+          <span className={getNotificationStatusClass(notificationPermission)}>
+            {getNotificationStatusLabel(notificationPermission)}
           </span>
-          {notificationPermission !== "granted" && (
-            <button
-              className="secondary-button"
-              onClick={() => void handleEnableNotifications()}
-              type="button"
+          <button
+            aria-label={
+              notificationPermission === "granted"
+                ? "Erinnerungen aktiv"
+                : "Erinnerungen aktivieren"
+            }
+            className={getNotificationButtonClass(notificationPermission)}
+            disabled={
+              notificationPermission === "granted" ||
+              notificationPermission === "unsupported"
+            }
+            onClick={() => void handleEnableNotifications()}
+            title={
+              notificationPermission === "granted"
+                ? "Erinnerungen sind aktiv"
+                : notificationPermission === "unsupported"
+                  ? "Dieser Browser unterstützt keine Benachrichtigungen"
+                  : "Erinnerungen aktivieren"
+            }
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              className="icon-bell"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.8"
+              viewBox="0 0 24 24"
             >
-              Erinnerungen aktivieren
-            </button>
-          )}
+              <path d="M15 17h5l-1.4-1.4a2 2 0 0 1-.6-1.4V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
+              <path d="M10 17a2 2 0 0 0 4 0" />
+            </svg>
+          </button>
           <button
             className="secondary-button"
             type="button"
