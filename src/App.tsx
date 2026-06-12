@@ -1056,7 +1056,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div>
+        <div className="topbar-title">
           <span className="eyebrow">Planner</span>
           <h1>{family ? family.name : "Familienkonto einrichten"}</h1>
           <p>
@@ -1103,17 +1103,32 @@ export default function App() {
             </svg>
           </button>
           <button
-            className="secondary-button"
-            type="button"
+            aria-label="Logout"
+            className="icon-button logout-button"
             onClick={() => void handleSignOut()}
+            title="Logout"
+            type="button"
           >
-            Logout
+            <svg
+              aria-hidden="true"
+              className="icon-logout"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.8"
+              viewBox="0 0 24 24"
+            >
+              <path d="M14 16l4-4-4-4" />
+              <path d="M18 12H9" />
+              <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" />
+            </svg>
           </button>
         </div>
       </header>
 
       {family && (
-        <nav className="tab-row">
+        <nav className="tab-row tab-shell">
           {TABS.map((tab) => (
             <button
               className={activeTab === tab.id ? "tab active" : "tab"}
