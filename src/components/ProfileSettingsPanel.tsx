@@ -84,6 +84,8 @@ export function ProfileSettingsPanel({
   }, [currentProfile.display_name]);
 
   const avatarPreview = avatarUrl.trim() || currentProfile.avatar_url;
+  const isOwner = family?.owner_id === currentProfile.id;
+  const isOnlyMember = members.length <= 1;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -292,17 +294,23 @@ export function ProfileSettingsPanel({
         <h2>Familienkonto</h2>
         <div className="form-stack">
           <p className="muted-text">
-            Du kannst dein aktuelles Familienkonto verlassen. Wenn du Eigentümer
-            der Familie bist und noch andere Mitglieder drin sind, musst du das
-            Konto erst selbst aufräumen oder übertragen.
+            {isOwner
+              ? isOnlyMember
+                ? "Da du aktuell alleiniger Eigentümer und das einzige Mitglied bist, wird das Familienkonto beim Verlassen vollständig gelöscht."
+                : "Du bist Eigentümer der Familie. Solange noch andere Mitglieder drin sind, musst du das Konto erst übertragen oder aufräumen."
+              : "Du kannst dein aktuelles Familienkonto jederzeit verlassen."}
           </p>
           <button
-            className="secondary-button"
-            disabled={busy || !family}
+            className={
+              isOwner && isOnlyMember ? "danger-button" : "secondary-button"
+            }
+            disabled={busy || !family || (Boolean(isOwner) && !isOnlyMember)}
             onClick={() => void handleLeaveFamily()}
             type="button"
           >
-            Familie verlassen
+            {isOwner && isOnlyMember
+              ? "Familienkonto löschen"
+              : "Familie verlassen"}
           </button>
         </div>
       </section>
