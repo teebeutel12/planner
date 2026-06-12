@@ -90,6 +90,7 @@ export function CalendarBoard({
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [activeEvent, setActiveEvent] = useState<EventItem | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [form, setForm] = useState<EventFormState>(() =>
     createEmptyForm(new Date(), members),
   );
@@ -144,6 +145,13 @@ export function CalendarBoard({
 
   function resetForm(nextDate = selectedDay) {
     setEditingEventId(null);
+    setIsFormOpen(false);
+    setForm(createEmptyForm(nextDate, members));
+  }
+
+  function openCreateForm(nextDate = selectedDay) {
+    setEditingEventId(null);
+    setIsFormOpen(true);
     setForm(createEmptyForm(nextDate, members));
   }
 
@@ -178,6 +186,7 @@ export function CalendarBoard({
       ),
     );
     setEditingEventId(event.id);
+    setIsFormOpen(true);
     setActiveEvent(null);
     setForm(eventToFormState(event));
   }
@@ -203,6 +212,7 @@ export function CalendarBoard({
       await onCreateEvent(payload);
     }
 
+    setSelectedDay(new Date(form.date));
     resetForm(new Date(form.date));
   }
 
@@ -399,11 +409,11 @@ export function CalendarBoard({
               setSelectedMonth(
                 new Date(selectedDay.getFullYear(), selectedDay.getMonth(), 1),
               );
-              resetForm(selectedDay);
+              openCreateForm(selectedDay);
             }}
             type="button"
           >
-            Termin anlegen
+            Termin erstellen
           </button>
         </div>
 
@@ -451,116 +461,152 @@ export function CalendarBoard({
       </section>
 
       <section className="card calendar-form-card">
-        <div className="section-header">
-          <div>
-            <h2>{editingEventId ? "Termin bearbeiten" : "Termin eintragen"}</h2>
-            <p className="muted-text">
-              Mit Teilnehmern und optionaler Browser-Erinnerung.
-            </p>
-          </div>
-          {editingEventId && (
+        {isFormOpen ? (
+          <>
+            <div className="section-header">
+              <div>
+                <h2>
+                  {editingEventId ? "Termin bearbeiten" : "Termin erstellen"}
+                </h2>
+                <p className="muted-text">
+                  Für {formatDate(new Date(form.date))} mit Teilnehmern und
+                  optionaler Browser-Erinnerung.
+                </p>
+              </div>
+              <button
+                className="muted-button"
+                onClick={() => resetForm()}
+                type="button"
+              >
+                Abbrechen
+              </button>
+            </div>
+
+            <form className="form-stack" onSubmit={handleSubmit}>
+              <label>
+                Titel
+                <input
+                  value={form.title}
+                  onChange={(event) => updateForm("title", event.target.value)}
+                  placeholder="z. B. Elternabend"
+                  required
+                />
+              </label>
+              <label>
+                Beschreibung
+                <textarea
+                  value={form.description}
+                  onChange={(event) =>
+                    updateForm("description", event.target.value)
+                  }
+                  placeholder="Optional: Ort, Hinweise, Notizen"
+                  rows={3}
+                />
+              </label>
+              <div className="two-column-form">
+                <label>
+                  Datum
+                  <input
+                    value={form.date}
+                    onChange={(event) => updateForm("date", event.target.value)}
+                    type="date"
+                    required
+                  />
+                </label>
+                <label>
+                  Start
+                  <input
+                    value={form.startTime}
+                    onChange={(event) =>
+                      updateForm("startTime", event.target.value)
+                    }
+                    type="time"
+                    required
+                  />
+                </label>
+              </div>
+              <div className="two-column-form">
+                <label>
+                  Ende
+                  <input
+                    value={form.endTime}
+                    onChange={(event) =>
+                      updateForm("endTime", event.target.value)
+                    }
+                    type="time"
+                  />
+                </label>
+                <label>
+                  Erinnerung
+                  <select
+                    value={form.reminderMinutes}
+                    onChange={(event) =>
+                      updateForm("reminderMinutes", event.target.value)
+                    }
+                  >
+                    {REMINDER_OPTIONS.map((option) => (
+                      <option key={option.label} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <fieldset>
+                <legend>Wen betrifft der Termin?</legend>
+                <div className="checkbox-grid">
+                  {members.map((member) => (
+                    <label className="checkbox-tile" key={member.id}>
+                      <input
+                        checked={form.participantIds.includes(member.id)}
+                        onChange={() => toggleParticipant(member.id)}
+                        type="checkbox"
+                      />
+                      <span
+                        className="color-dot"
+                        style={{ backgroundColor: member.color }}
+                        aria-hidden="true"
+                      />
+                      {member.display_name}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <button className="primary-button" type="submit" disabled={busy}>
+                {editingEventId ? "Termin aktualisieren" : "Termin speichern"}
+              </button>
+            </form>
+          </>
+        ) : (
+          <div className="calendar-form-placeholder">
+            <div className="calendar-form-placeholder-copy">
+              <span className="eyebrow">Schnell hinzufügen</span>
+              <h2>Neuen Termin für {formatDate(selectedDay)} anlegen</h2>
+              <p className="muted-text">
+                Das Formular bleibt ausgeblendet, bis du es bewusst öffnest.
+              </p>
+            </div>
+
+            <div className="calendar-form-placeholder-stats">
+              <div className="calendar-form-placeholder-stat">
+                <span className="muted-label">Ausgewählter Tag</span>
+                <strong>{formatDate(selectedDay)}</strong>
+              </div>
+              <div className="calendar-form-placeholder-stat">
+                <span className="muted-label">Termine an diesem Tag</span>
+                <strong>{selectedDayEvents.length}</strong>
+              </div>
+            </div>
+
             <button
-              className="muted-button"
-              onClick={() => resetForm()}
+              className="primary-button"
+              onClick={() => openCreateForm(selectedDay)}
               type="button"
             >
-              Abbrechen
+              + Termin erstellen
             </button>
-          )}
-        </div>
-
-        <form className="form-stack" onSubmit={handleSubmit}>
-          <label>
-            Titel
-            <input
-              value={form.title}
-              onChange={(event) => updateForm("title", event.target.value)}
-              placeholder="z. B. Elternabend"
-              required
-            />
-          </label>
-          <label>
-            Beschreibung
-            <textarea
-              value={form.description}
-              onChange={(event) =>
-                updateForm("description", event.target.value)
-              }
-              placeholder="Optional: Ort, Hinweise, Notizen"
-              rows={3}
-            />
-          </label>
-          <div className="two-column-form">
-            <label>
-              Datum
-              <input
-                value={form.date}
-                onChange={(event) => updateForm("date", event.target.value)}
-                type="date"
-                required
-              />
-            </label>
-            <label>
-              Start
-              <input
-                value={form.startTime}
-                onChange={(event) =>
-                  updateForm("startTime", event.target.value)
-                }
-                type="time"
-                required
-              />
-            </label>
           </div>
-          <div className="two-column-form">
-            <label>
-              Ende
-              <input
-                value={form.endTime}
-                onChange={(event) => updateForm("endTime", event.target.value)}
-                type="time"
-              />
-            </label>
-            <label>
-              Erinnerung
-              <select
-                value={form.reminderMinutes}
-                onChange={(event) =>
-                  updateForm("reminderMinutes", event.target.value)
-                }
-              >
-                {REMINDER_OPTIONS.map((option) => (
-                  <option key={option.label} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <fieldset>
-            <legend>Wen betrifft der Termin?</legend>
-            <div className="checkbox-grid">
-              {members.map((member) => (
-                <label className="checkbox-tile" key={member.id}>
-                  <input
-                    checked={form.participantIds.includes(member.id)}
-                    onChange={() => toggleParticipant(member.id)}
-                    type="checkbox"
-                  />
-                  <span
-                    className="color-dot"
-                    style={{ backgroundColor: member.color }}
-                    aria-hidden="true"
-                  />
-                  {member.display_name}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <button className="primary-button" type="submit" disabled={busy}>
-            {editingEventId ? "Termin aktualisieren" : "Termin speichern"}
-          </button>
-        </form>
+        )}
       </section>
 
       <section className="card overview-full-width">
