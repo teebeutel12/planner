@@ -41,8 +41,8 @@ const PERSON_COLORS = [
 const TABS: { id: AppTab; label: string }[] = [
   { id: "overview", label: "Übersicht" },
   { id: "calendar", label: "Kalender" },
-  { id: "shopping", label: "Einkaufsliste" },
-  { id: "wishes", label: "Wunschlisten" },
+  { id: "shopping", label: "Einkauf" },
+  { id: "wishes", label: "Wünsche" },
   { id: "family", label: "Familie" },
   { id: "profile", label: "Profil" },
 ];
@@ -101,6 +101,111 @@ function getNotificationButtonClass(permission: NotificationSupportState) {
   }
 
   return "icon-button";
+}
+
+function getTabIcon(tabId: AppTab) {
+  switch (tabId) {
+    case "overview":
+      return (
+        <svg
+          aria-hidden="true"
+          className="tab-icon"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <path d="M4 13h6V4H4z" />
+          <path d="M14 20h6v-9h-6z" />
+          <path d="M14 10h6V4h-6z" />
+          <path d="M4 20h6v-3H4z" />
+        </svg>
+      );
+    case "calendar":
+      return (
+        <svg
+          aria-hidden="true"
+          className="tab-icon"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <rect height="18" rx="3" width="18" x="3" y="4" />
+          <path d="M16 2v4M8 2v4M3 10h18" />
+        </svg>
+      );
+    case "shopping":
+      return (
+        <svg
+          aria-hidden="true"
+          className="tab-icon"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="9" cy="20" r="1" />
+          <circle cx="18" cy="20" r="1" />
+          <path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.5L22 7H7" />
+        </svg>
+      );
+    case "wishes":
+      return (
+        <svg
+          aria-hidden="true"
+          className="tab-icon"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <path d="M12 21s-6.7-4.4-9-8.1C1.1 9.8 2.2 6 6 6c2.1 0 3.3 1.1 4 2 0.7-0.9 1.9-2 4-2 3.8 0 4.9 3.8 3 6.9-2.3 3.7-9 8.1-9 8.1z" />
+        </svg>
+      );
+    case "family":
+      return (
+        <svg
+          aria-hidden="true"
+          className="tab-icon"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+          <circle cx="9.5" cy="7" r="3" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.9" />
+          <path d="M16 3.1a3 3 0 0 1 0 5.8" />
+        </svg>
+      );
+    case "profile":
+      return (
+        <svg
+          aria-hidden="true"
+          className="tab-icon"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="8" r="4" />
+          <path d="M5 20a7 7 0 0 1 14 0" />
+        </svg>
+      );
+  }
 }
 
 function pickColor(seed: string) {
@@ -1128,18 +1233,39 @@ export default function App() {
       </header>
 
       {family && (
-        <nav className="tab-row tab-shell">
-          {TABS.map((tab) => (
-            <button
-              className={activeTab === tab.id ? "tab active" : "tab"}
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              type="button"
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+        <>
+          <nav className="tab-row tab-shell desktop-tab-nav">
+            {TABS.map((tab) => (
+              <button
+                className={activeTab === tab.id ? "tab active" : "tab"}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                type="button"
+              >
+                {getTabIcon(tab.id)}
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">
+            {TABS.map((tab) => (
+              <button
+                className={
+                  activeTab === tab.id
+                    ? "mobile-nav-item active"
+                    : "mobile-nav-item"
+                }
+                key={`mobile-${tab.id}`}
+                onClick={() => setActiveTab(tab.id)}
+                type="button"
+              >
+                {getTabIcon(tab.id)}
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </>
       )}
 
       {(errorMessage || successMessage) && (

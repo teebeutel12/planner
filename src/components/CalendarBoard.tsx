@@ -123,6 +123,25 @@ export function CalendarBoard({
     [selectedDay, sortedEvents],
   );
 
+  const selectedMonthEvents = useMemo(
+    () =>
+      sortedEvents.filter(
+        (event) =>
+          new Date(event.starts_at).getMonth() === selectedMonth.getMonth() &&
+          new Date(event.starts_at).getFullYear() ===
+            selectedMonth.getFullYear(),
+      ),
+    [selectedMonth, sortedEvents],
+  );
+
+  const upcomingMonthEvents = useMemo(
+    () =>
+      selectedMonthEvents.filter(
+        (event) => new Date(event.starts_at).getTime() >= Date.now(),
+      ).length,
+    [selectedMonthEvents],
+  );
+
   function resetForm(nextDate = selectedDay) {
     setEditingEventId(null);
     setForm(createEmptyForm(nextDate, members));
@@ -207,44 +226,92 @@ export function CalendarBoard({
 
   return (
     <div className="dashboard-grid calendar-layout">
-      <section className="card calendar-card">
-        <div className="calendar-toolbar">
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={() =>
-              setSelectedMonth(
-                new Date(
-                  selectedMonth.getFullYear(),
-                  selectedMonth.getMonth() - 1,
-                  1,
-                ),
-              )
-            }
-          >
-            ←
-          </button>
-          <h2>
-            {selectedMonth.toLocaleDateString("de-DE", {
-              month: "long",
-              year: "numeric",
-            })}
-          </h2>
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={() =>
-              setSelectedMonth(
-                new Date(
-                  selectedMonth.getFullYear(),
-                  selectedMonth.getMonth() + 1,
-                  1,
-                ),
-              )
-            }
-          >
-            →
-          </button>
+      <section className="card calendar-card modern-calendar-card">
+        <div className="calendar-card-header">
+          <div>
+            <span className="eyebrow">Monatsansicht</span>
+            <h2>
+              {selectedMonth.toLocaleDateString("de-DE", {
+                month: "long",
+                year: "numeric",
+              })}
+            </h2>
+          </div>
+          <div className="calendar-toolbar-group">
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() =>
+                setSelectedMonth(
+                  new Date(
+                    selectedMonth.getFullYear(),
+                    selectedMonth.getMonth() - 1,
+                    1,
+                  ),
+                )
+              }
+            >
+              ←
+            </button>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                const today = new Date();
+                setSelectedMonth(
+                  new Date(today.getFullYear(), today.getMonth(), 1),
+                );
+                setSelectedDay(today);
+              }}
+            >
+              Heute
+            </button>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() =>
+                setSelectedMonth(
+                  new Date(
+                    selectedMonth.getFullYear(),
+                    selectedMonth.getMonth() + 1,
+                    1,
+                  ),
+                )
+              }
+            >
+              →
+            </button>
+          </div>
+        </div>
+
+        <div className="calendar-stats">
+          <div className="calendar-stat">
+            <span className="muted-label">Termine im Monat</span>
+            <strong>{selectedMonthEvents.length}</strong>
+          </div>
+          <div className="calendar-stat">
+            <span className="muted-label">Noch bevorstehend</span>
+            <strong>{upcomingMonthEvents}</strong>
+          </div>
+          <div className="calendar-stat">
+            <span className="muted-label">Ausgewählter Tag</span>
+            <strong>{selectedDayEvents.length}</strong>
+          </div>
+        </div>
+
+        <div className="calendar-legend">
+          <span>
+            <span className="legend-dot is-today" />
+            Heute
+          </span>
+          <span>
+            <span className="legend-dot is-selected" />
+            Ausgewählt
+          </span>
+          <span>
+            <span className="legend-dot is-event" />
+            Mit Termin
+          </span>
         </div>
 
         <div className="calendar-weekdays">
