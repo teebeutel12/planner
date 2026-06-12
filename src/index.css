@@ -210,6 +210,12 @@ p {
     margin-bottom: 0;
 }
 
+.topbar-subline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+}
+
 .tab-row {
     display: flex;
     flex-wrap: wrap;
@@ -1010,20 +1016,67 @@ body[data-theme="light"] a {
     .auth-shell,
     .empty-state-shell {
         width: min(100%, calc(100% - 1rem));
-        padding-top: 1rem;
-        padding-bottom: 5.75rem;
+        padding-top: 0.85rem;
+        padding-bottom: 6.3rem;
+    }
+
+    .card,
+    .topbar {
+        border-radius: 20px;
+        padding: 1rem;
     }
 
     .topbar,
     .section-header,
     .list-card,
-    .header-actions,
     .card-actions,
     .modal-actions,
     .profile-hero,
     .color-settings-row {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .topbar h1 {
+        font-size: 1.45rem;
+        line-height: 1.15;
+    }
+
+    .topbar-email {
+        display: none;
+    }
+
+    .topbar-subline {
+        font-size: 0.92rem;
+    }
+
+    .header-actions {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .status-pill {
+        min-height: 2.3rem;
+        font-size: 0.72rem;
+    }
+
+    .list-card {
+        padding: 0.9rem;
+        gap: 0.75rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .summary-card {
+        padding: 0.85rem;
+    }
+
+    .summary-card strong {
+        font-size: 1.45rem;
     }
 
     .desktop-tab-nav {
@@ -1036,14 +1089,19 @@ body[data-theme="light"] a {
         right: 0.75rem;
         bottom: 0.75rem;
         z-index: 30;
-        display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        display: flex;
         gap: 0.35rem;
+        overflow-x: auto;
         padding: 0.45rem;
         border-radius: 22px;
         background: rgba(15, 23, 42, 0.94);
         border: 1px solid rgba(148, 163, 184, 0.16);
         backdrop-filter: blur(14px);
+        scrollbar-width: none;
+    }
+
+    .mobile-bottom-nav::-webkit-scrollbar {
+        display: none;
     }
 
     .mobile-nav-item {
@@ -1053,9 +1111,11 @@ body[data-theme="light"] a {
         display: grid;
         justify-items: center;
         gap: 0.2rem;
-        padding: 0.55rem 0.2rem;
+        padding: 0.55rem 0.55rem;
         border-radius: 16px;
         font-size: 0.68rem;
+        min-width: 72px;
+        flex: 1 0 auto;
     }
 
     .mobile-nav-item.active {
@@ -1069,12 +1129,46 @@ body[data-theme="light"] a {
     }
 
     .calendar-weekdays {
-        font-size: 0.8rem;
+        font-size: 0.76rem;
+        gap: 0.3rem;
+    }
+
+    .calendar-grid {
+        gap: 0.3rem;
+    }
+
+    .calendar-day {
+        min-height: 76px;
+        padding: 0.5rem;
+    }
+
+    .calendar-day-events {
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .calendar-chip-button {
+        width: 0.55rem;
+        min-width: 0.55rem;
+        height: 0.55rem;
+        min-height: 0.55rem;
+        padding: 0;
+        border-radius: 50%;
+        border-left-width: 0;
+        overflow: hidden;
+    }
+
+    .calendar-chip-button strong,
+    .calendar-chip-button small {
+        display: none;
     }
 
     .calendar-toolbar-group,
     .calendar-stats,
-    .calendar-legend {
+    .calendar-legend,
+    .wish-columns,
+    .checkbox-grid,
+    .person-list {
         display: grid;
         grid-template-columns: 1fr;
     }

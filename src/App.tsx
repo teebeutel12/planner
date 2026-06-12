@@ -1228,8 +1228,9 @@ export default function App() {
         <div className="topbar-title">
           <span className="eyebrow">Planner</span>
           <h1>{family ? family.name : "Familienkonto einrichten"}</h1>
-          <p>
-            {currentProfile?.display_name} · {currentProfile?.email}
+          <p className="topbar-subline">
+            <span>{currentProfile?.display_name}</span>
+            <span className="topbar-email"> · {currentProfile?.email}</span>
           </p>
         </div>
         <div className="header-actions">
