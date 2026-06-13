@@ -13,7 +13,6 @@ interface ProfileSettingsPanelProps {
   members: Profile[];
   busy: boolean;
   notificationPermission: NotificationSupportState;
-  onEnableNotifications: () => Promise<void>;
   onUpdateProfile: (input: ProfileSettingsInput) => Promise<void>;
   onChangePassword: (newPassword: string) => Promise<void>;
   onLeaveFamily: () => Promise<void>;
@@ -48,7 +47,6 @@ export function ProfileSettingsPanel({
   members,
   busy,
   notificationPermission,
-  onEnableNotifications,
   onUpdateProfile,
   onChangePassword,
   onLeaveFamily,
@@ -280,20 +278,10 @@ export function ProfileSettingsPanel({
             <strong>{getNotificationLabel(notificationPermission)}</strong>
           </div>
           <p className="muted-text">
-            Browser-Erinnerungen zeigen dir Termine rechtzeitig an. Bei
-            blockierten Benachrichtigungen musst du sie im Browser wieder
-            erlauben.
+            Die App fragt beim ersten Öffnen automatisch nach der Berechtigung.
+            Falls Benachrichtigungen blockiert wurden, kannst du sie später in
+            den Browser- oder App-Einstellungen wieder erlauben.
           </p>
-          {notificationPermission !== "granted" &&
-            notificationPermission !== "unsupported" && (
-              <button
-                className="secondary-button"
-                onClick={() => void onEnableNotifications()}
-                type="button"
-              >
-                Benachrichtigungen aktivieren
-              </button>
-            )}
         </div>
       </section>
 

@@ -9,6 +9,7 @@ import { ShoppingListPanel } from "./components/ShoppingListPanel";
 import { WishListPanel } from "./components/WishListPanel";
 import {
   getNotificationPermission,
+  refreshNotificationPermission,
   requestNotificationPermission,
   scheduleEventNotifications,
   type NotificationSupportState,
@@ -46,6 +47,7 @@ const TABS: { id: AppTab; label: string }[] = [
   { id: "family", label: "Familie" },
   { id: "profile", label: "Profil" },
 ];
+const NOTIFICATION_PROMPT_STORAGE_KEY = "planner-notification-prompted";
 
 function extractErrorMessage(error: unknown) {
   if (error instanceof Error) {
@@ -85,22 +87,6 @@ function getNotificationStatusClass(permission: NotificationSupportState) {
   }
 
   return "status-pill";
-}
-
-function getNotificationButtonClass(permission: NotificationSupportState) {
-  if (permission === "granted") {
-    return "icon-button is-active";
-  }
-
-  if (permission === "denied") {
-    return "icon-button is-blocked";
-  }
-
-  if (permission === "unsupported") {
-    return "icon-button is-unsupported";
-  }
-
-  return "icon-button";
 }
 
 function getTabIcon(tabId: AppTab) {
@@ -428,7 +414,9 @@ export default function App() {
       return;
     }
 
-    setNotificationPermission(getNotificationPermission());
+    void refreshNotificationPermission().then((permission) => {
+      setNotificationPermission(permission);
+    });
 
     void supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
@@ -507,6 +495,47 @@ export default function App() {
   }, [events, currentProfile, notificationPermission]);
 
   useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !session?.user ||
+      notificationPermission !== "default"
+    ) {
+      return;
+    }
+
+    if (
+      window.localStorage.getItem(NOTIFICATION_PROMPT_STORAGE_KEY) === "true"
+    ) {
+      return;
+    }
+
+    window.localStorage.setItem(NOTIFICATION_PROMPT_STORAGE_KEY, "true");
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void requestNotificationPermission().then((permission) => {
+        if (cancelled) {
+          return;
+        }
+
+        setNotificationPermission(permission);
+
+        if (permission === "denied") {
+          setErrorMessage(
+            "Benachrichtigungen wurden blockiert. Du kannst sie später in den Browser- oder App-Einstellungen wieder aktivieren.",
+          );
+          setSuccessMessage(null);
+        }
+      });
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [notificationPermission, session?.user]);
+
+  useEffect(() => {
     const preference = currentProfile?.theme_preference ?? "system";
 
     const resolveTheme = () => {
@@ -567,30 +596,6 @@ export default function App() {
       setErrorMessage(extractErrorMessage(error));
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function handleEnableNotifications() {
-    const permission = await requestNotificationPermission();
-    setNotificationPermission(permission);
-
-    if (permission === "granted") {
-      setSuccessMessage("Browser-Erinnerungen wurden aktiviert.");
-      setErrorMessage(null);
-      return;
-    }
-
-    if (permission === "denied") {
-      setErrorMessage(
-        "Browser-Erinnerungen wurden blockiert. Du kannst sie in den Browser-Einstellungen wieder aktivieren.",
-      );
-      setSuccessMessage(null);
-      return;
-    }
-
-    if (permission === "unsupported") {
-      setErrorMessage("Dieser Browser unterstützt keine Benachrichtigungen.");
-      setSuccessMessage(null);
     }
   }
 
@@ -1238,41 +1243,6 @@ export default function App() {
             {getNotificationStatusLabel(notificationPermission)}
           </span>
           <button
-            aria-label={
-              notificationPermission === "granted"
-                ? "Erinnerungen aktiv"
-                : "Erinnerungen aktivieren"
-            }
-            className={getNotificationButtonClass(notificationPermission)}
-            disabled={
-              notificationPermission === "granted" ||
-              notificationPermission === "unsupported"
-            }
-            onClick={() => void handleEnableNotifications()}
-            title={
-              notificationPermission === "granted"
-                ? "Erinnerungen sind aktiv"
-                : notificationPermission === "unsupported"
-                  ? "Dieser Browser unterstützt keine Benachrichtigungen"
-                  : "Erinnerungen aktivieren"
-            }
-            type="button"
-          >
-            <svg
-              aria-hidden="true"
-              className="icon-bell"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.8"
-              viewBox="0 0 24 24"
-            >
-              <path d="M15 17h5l-1.4-1.4a2 2 0 0 1-.6-1.4V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
-              <path d="M10 17a2 2 0 0 0 4 0" />
-            </svg>
-          </button>
-          <button
             aria-label="Logout"
             className="icon-button logout-button"
             onClick={() => void handleSignOut()}
@@ -1410,7 +1380,6 @@ export default function App() {
           members={members}
           busy={busy}
           notificationPermission={notificationPermission}
-          onEnableNotifications={handleEnableNotifications}
           onUpdateProfile={handleUpdateProfile}
           onChangePassword={handleChangePassword}
           onLeaveFamily={handleLeaveFamily}
