@@ -22,7 +22,6 @@ interface ShoppingListPanelProps {
 
 const DEFAULT_LIST_NAME = "Allgemein";
 const ALL_LISTS_KEY = "__all__";
-const LIST_SUGGESTIONS_ID = "shopping-list-suggestions";
 
 function normalizeListName(listName: string) {
   return listName.trim() || DEFAULT_LIST_NAME;

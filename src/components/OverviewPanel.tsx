@@ -1,11 +1,12 @@
+import { formatDateTime } from "../lib/date";
 import {
   EventItem,
   Profile,
   ShoppingItem,
   ShoppingList,
+  TodoItem,
   WishItem,
 } from "../types";
-import { formatDateTime } from "../lib/date";
 
 interface OverviewPanelProps {
   events: EventItem[];
@@ -13,6 +14,7 @@ interface OverviewPanelProps {
   shoppingLists: ShoppingList[];
   shoppingItems: ShoppingItem[];
   wishes: WishItem[];
+  todos: TodoItem[];
 }
 
 function memberNameMap(members: Profile[]) {
@@ -25,6 +27,7 @@ export function OverviewPanel({
   shoppingLists,
   shoppingItems,
   wishes,
+  todos,
 }: OverviewPanelProps) {
   const membersById = memberNameMap(members);
   const allUpcomingEvents = [...events]
@@ -42,6 +45,7 @@ export function OverviewPanel({
     openShoppingItems.some((item) => item.list_name === list.name),
   );
   const activeWishes = wishes.filter((wish) => !wish.is_fulfilled);
+  const openTodos = todos.filter((todo) => !todo.is_done);
 
   const wishesByPerson = members.map((member) => ({
     member,
@@ -65,13 +69,9 @@ export function OverviewPanel({
         </div>
         <div className="stats-grid">
           <article className="summary-card">
-            <span className="muted-label">Nächste Termine</span>
-            <strong>{allUpcomingEvents.length}</strong>
-            <p>
-              {upcomingEvents.length > 0
-                ? "stehen noch an"
-                : "aktuell nichts geplant"}
-            </p>
+            <span className="muted-label">Offene ToDos</span>
+            <strong>{openTodos.length}</strong>
+            <p>warten noch auf Erledigung</p>
           </article>
           <article className="summary-card">
             <span className="muted-label">Offene Einkaufslisten</span>

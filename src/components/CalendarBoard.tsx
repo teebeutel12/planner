@@ -89,6 +89,7 @@ export function CalendarBoard({
   onDeleteEvent,
   todos,
 }: CalendarBoardProps) {
+  void todos;
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [activeEvent, setActiveEvent] = useState<EventItem | null>(null);

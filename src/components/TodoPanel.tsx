@@ -95,6 +95,8 @@ export function TodoPanel({
     return { open, done, overdue, total, progress };
   }, [todos]);
 
+  void stats;
+
   const filteredTodos = useMemo(() => {
     const relevantTodos = todos.filter((todo) => {
       if (filter === "open") {

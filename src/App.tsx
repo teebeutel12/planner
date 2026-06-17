@@ -66,22 +66,6 @@ function extractErrorMessage(error: unknown) {
   return "Es ist ein unerwarteter Fehler aufgetreten.";
 }
 
-function getNotificationStatusClass(permission: NotificationSupportState) {
-  if (permission === "granted") {
-    return "status-pill is-active";
-  }
-
-  if (permission === "denied") {
-    return "status-pill is-blocked";
-  }
-
-  if (permission === "unsupported") {
-    return "status-pill is-unsupported";
-  }
-
-  return "status-pill";
-}
-
 function getTabIcon(tabId: AppTab) {
   switch (tabId) {
     case "overview":
