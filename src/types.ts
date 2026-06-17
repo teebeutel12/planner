@@ -2,6 +2,7 @@ export type AppTab =
   | "overview"
   | "calendar"
   | "shopping"
+  | "todos"
   | "wishes"
   | "family"
   | "profile";
@@ -55,6 +56,23 @@ export interface ShoppingItem {
   assigned_to: string | null;
   is_done: boolean;
   created_at: string;
+  quantity: string | null;
+  category: string | null;
+}
+
+export type TodoPriority = "low" | "medium" | "high";
+
+export interface TodoItem {
+  id: string;
+  family_id: string;
+  title: string;
+  description: string | null;
+  assigned_to: string | null;
+  due_date: string | null;
+  priority: TodoPriority;
+  is_done: boolean;
+  created_by: string;
+  created_at: string;
 }
 
 export interface WishItem {
@@ -84,6 +102,16 @@ export interface ShoppingItemInput {
   title: string;
   notes: string;
   assignedTo: string;
+  quantity: string;
+  category: string;
+}
+
+export interface TodoInput {
+  title: string;
+  description: string;
+  assignedTo: string;
+  dueDate: string;
+  priority: TodoPriority;
 }
 
 export interface WishInput {

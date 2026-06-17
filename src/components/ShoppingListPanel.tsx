@@ -47,11 +47,18 @@ export function ShoppingListPanel({
   const [listName, setListName] = useState(DEFAULT_LIST_NAME);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [category, setCategory] = useState("");
+  const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
+  const [isCreateListFormOpen, setIsCreateListFormOpen] = useState(false);
+  const [isEditingList, setIsEditingList] = useState(false);
   const [assignedTo, setAssignedTo] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingListName, setEditingListName] = useState(DEFAULT_LIST_NAME);
   const [editingTitle, setEditingTitle] = useState("");
   const [editingNotes, setEditingNotes] = useState("");
+  const [editingQuantity, setEditingQuantity] = useState("");
+  const [editingCategory, setEditingCategory] = useState("");
   const [editingAssignedTo, setEditingAssignedTo] = useState("");
 
   const normalizedLists = useMemo(
@@ -143,7 +150,9 @@ export function ShoppingListPanel({
     setActiveListName(normalized);
     setListName(normalized);
     setRenameListName(normalized);
+    setIsEditingList(false);
     setNewListName("");
+    setIsCreateListFormOpen(false);
   }
 
   async function handleRenameListSubmit(event: FormEvent<HTMLFormElement>) {
@@ -157,6 +166,7 @@ export function ShoppingListPanel({
     setActiveListName(normalized);
     setListName(normalized);
     setRenameListName(normalized);
+    setIsEditingList(false);
   }
 
   async function handleDeleteListClick() {
@@ -176,6 +186,7 @@ export function ShoppingListPanel({
     setActiveListName(ALL_LISTS_KEY);
     setListName(DEFAULT_LIST_NAME);
     setRenameListName("");
+    setIsEditingList(false);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -187,6 +198,8 @@ export function ShoppingListPanel({
       title,
       notes,
       assignedTo,
+      quantity,
+      category,
     });
 
     setListName(
@@ -195,6 +208,9 @@ export function ShoppingListPanel({
     setTitle("");
     setNotes("");
     setAssignedTo("");
+    setQuantity("");
+    setCategory("");
+    setIsCreateFormOpen(false);
   }
 
   function startEditing(item: ShoppingItem) {
@@ -203,6 +219,8 @@ export function ShoppingListPanel({
     setEditingTitle(item.title);
     setEditingNotes(item.notes ?? "");
     setEditingAssignedTo(item.assigned_to ?? "");
+    setEditingQuantity(item.quantity ?? "");
+    setEditingCategory(item.category ?? "");
   }
 
   function stopEditing() {
@@ -211,6 +229,8 @@ export function ShoppingListPanel({
     setEditingTitle("");
     setEditingNotes("");
     setEditingAssignedTo("");
+    setEditingQuantity("");
+    setEditingCategory("");
   }
 
   async function handleSave(itemId: string) {
@@ -219,6 +239,8 @@ export function ShoppingListPanel({
       title: editingTitle,
       notes: editingNotes,
       assignedTo: editingAssignedTo,
+      quantity: editingQuantity,
+      category: editingCategory,
     });
     stopEditing();
   }
@@ -237,13 +259,7 @@ export function ShoppingListPanel({
   return (
     <div className="dashboard-grid shopping-layout">
       <section className="card compact-card">
-        <span className="eyebrow">Einkauf</span>
         <h2>Einkaufslisten verwalten</h2>
-        <p className="muted-text">
-          Erstelle Listen für verschiedene Läden und behalte offene Einträge
-          getrennt im Blick.
-        </p>
-
         <div
           className="shopping-list-tabs"
           role="tablist"
@@ -274,54 +290,188 @@ export function ShoppingListPanel({
               {name}
             </button>
           ))}
-        </div>
 
-        <div className="shopping-summary-grid">
-          <article className="summary-card">
-            <span className="muted-label">Aktive Ansicht</span>
-            <strong>
-              {activeListName === ALL_LISTS_KEY
-                ? "Alle Listen"
-                : activeListName}
-            </strong>
-            <p>{activeListStats.openCount} offen</p>
-          </article>
-          <article className="summary-card">
-            <span className="muted-label">Listen</span>
-            <strong>{normalizedLists.length}</strong>
-            <p>stehen aktuell zur Auswahl</p>
-          </article>
-        </div>
+          {isCreateListFormOpen ? (
+            <form
+              className="form-stack shopping-list-form-card"
+              onSubmit={handleCreateListSubmit}
+            >
+              <div className="section-header stacked-mobile">
+                <div>
+                  <h3>Neue Liste anlegen</h3>
+                  <p className="muted-text">
+                    Erstelle eine neue Einkaufsliste.
+                  </p>
+                </div>
+                <button
+                  className="muted-button"
+                  onClick={() => setIsCreateListFormOpen(false)}
+                  type="button"
+                >
+                  Abbrechen
+                </button>
+              </div>
 
-        <div className="shopping-management-grid">
-          <form
-            className="form-stack shopping-list-form-card"
-            onSubmit={handleCreateListSubmit}
-          >
-            <h3>Neue Liste anlegen</h3>
-            <label>
-              Name der Liste
-              <input
-                value={newListName}
-                onChange={(event) => setNewListName(event.target.value)}
-                placeholder="z. B. Rewe, DM, Wochenmarkt"
-                required
-              />
-            </label>
-            <button className="secondary-button" type="submit" disabled={busy}>
-              Liste speichern
+              <label>
+                Name der Liste
+                <input
+                  value={newListName}
+                  onChange={(event) => setNewListName(event.target.value)}
+                  placeholder="z. B. Rewe, DM, Wochenmarkt"
+                  required
+                />
+              </label>
+
+              <button
+                className="secondary-button"
+                type="submit"
+                disabled={busy}
+              >
+                Liste <span aria-hidden="true">✓</span>
+              </button>
+            </form>
+          ) : (
+            <button
+              className="secondary-button"
+              onClick={() => setIsCreateListFormOpen(true)}
+              type="button"
+            >
+              +
             </button>
-          </form>
+          )}
+        </div>
+      </section>
+      <section className="card overview-full-width">
+        <div className="section-header stacked-mobile">
+          <div>
+            <div className="shopping-title-row">
+              <h2>{activeListName === ALL_LISTS_KEY ? "" : activeListName}</h2>
+              {activeListName !== ALL_LISTS_KEY && (
+                <button
+                  className="icon-button"
+                  onClick={() => {
+                    setRenameListName(activeListName);
+                    setIsEditingList(true);
+                  }}
+                  type="button"
+                  title="Liste bearbeiten"
+                >
+                  <span aria-hidden="true">⚙</span>
+                </button>
+              )}
+            </div>
+            {activeListName !== ALL_LISTS_KEY &&
+              !isEditingList &&
+              (isCreateFormOpen ? (
+                <form
+                  className="form-stack shopping-item-create-form"
+                  onSubmit={handleSubmit}
+                >
+                  <div className="section-header stacked-mobile">
+                    <h3>Neuen Einkauf hinzufügen</h3>
+                    <button
+                      className="muted-button"
+                      onClick={() => setIsCreateFormOpen(false)}
+                      type="button"
+                    >
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </div>
 
-          <div className="shopping-list-form-card">
-            <h3>Aktive Liste verwalten</h3>
-            {activeListName === ALL_LISTS_KEY ? (
-              <p className="muted-text">
-                Wähle oben eine konkrete Liste aus, um sie umzubenennen oder zu
-                löschen.
-              </p>
-            ) : (
-              <form className="form-stack" onSubmit={handleRenameListSubmit}>
+                  <div className="inline-form-grid">
+                    <label>
+                      Liste / Laden
+                      <select
+                        value={listName}
+                        onChange={(event) => setListName(event.target.value)}
+                        required
+                      >
+                        {normalizedLists.map((entry) => (
+                          <option key={entry} value={entry}>
+                            {entry}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Zuständig
+                      <select
+                        value={assignedTo}
+                        onChange={(event) => setAssignedTo(event.target.value)}
+                      >
+                        <option value="">Niemand ausgewählt</option>
+                        {members.map((member) => (
+                          <option key={member.id} value={member.id}>
+                            {member.display_name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label>
+                      Eintrag
+                      <input
+                        value={title}
+                        onChange={(event) => setTitle(event.target.value)}
+                        placeholder="z. B. Milch"
+                        required
+                      />
+                    </label>
+
+                    <label>
+                      Menge
+                      <input
+                        value={quantity}
+                        onChange={(event) => setQuantity(event.target.value)}
+                        placeholder="z. B. 2x, 1 kg"
+                      />
+                    </label>
+
+                    <label>
+                      Kategorie
+                      <input
+                        value={category}
+                        onChange={(event) => setCategory(event.target.value)}
+                        placeholder="z. B. Obst, Getränke"
+                      />
+                    </label>
+
+                    <label className="full-width-field">
+                      Notiz
+                      <textarea
+                        value={notes}
+                        onChange={(event) => setNotes(event.target.value)}
+                        placeholder="Optional: Marke, Hinweis"
+                        rows={3}
+                      />
+                    </label>
+                  </div>
+
+                  <button
+                    className="primary-button"
+                    type="submit"
+                    disabled={busy}
+                  >
+                    Eintrag speichern
+                  </button>
+                </form>
+              ) : (
+                <button
+                  className="primary-button add-item-button"
+                  onClick={() => {
+                    setListName(activeListName);
+                    setIsCreateFormOpen(true);
+                  }}
+                  type="button"
+                >
+                  + Einkauf hinzufügen
+                </button>
+              ))}
+            {isEditingList && activeListName !== ALL_LISTS_KEY && (
+              <form
+                className="form-stack shopping-list-form-card"
+                onSubmit={handleRenameListSubmit}
+              >
                 <label>
                   Listenname
                   <input
@@ -330,104 +480,38 @@ export function ShoppingListPanel({
                     required
                   />
                 </label>
+
                 <div className="card-actions compact-actions">
                   <button
                     className="primary-button"
                     type="submit"
                     disabled={busy}
                   >
-                    Umbenennen
+                    <span aria-hidden="true">✓</span>
                   </button>
+
+                  <button
+                    className="muted-button"
+                    onClick={() => setIsEditingList(false)}
+                    type="button"
+                  >
+                    <span aria-hidden="true">×</span>
+                  </button>
+
                   <button
                     className="danger-button"
                     onClick={() => void handleDeleteListClick()}
                     type="button"
                     disabled={busy}
                   >
-                    Liste löschen
+                    <span aria-hidden="true">🗑️</span>
                   </button>
                 </div>
               </form>
             )}
           </div>
-        </div>
-      </section>
-
-      <section className="card overview-full-width">
-        <div className="section-header stacked-mobile">
-          <div>
-            <h2>
-              {activeListName === ALL_LISTS_KEY
-                ? "Einkaufslisten"
-                : `Liste: ${activeListName}`}
-            </h2>
-            <p className="muted-text">
-              {activeListName === ALL_LISTS_KEY
-                ? "Alle Listen im Überblick – sauber nach Läden getrennt."
-                : "Einträge dieser Liste bearbeiten, abhaken oder neu anlegen."}
-            </p>
-          </div>
           <span className="pill">{activeListStats.openCount} offen</span>
         </div>
-
-        <form
-          className="form-stack shopping-item-create-form"
-          onSubmit={handleSubmit}
-        >
-          <div className="inline-form-grid">
-            <label>
-              Liste / Laden
-              <input
-                value={listName}
-                onChange={(event) => setListName(event.target.value)}
-                list={LIST_SUGGESTIONS_ID}
-                placeholder="z. B. Rewe"
-                required
-              />
-              <datalist id={LIST_SUGGESTIONS_ID}>
-                {normalizedLists.map((entry) => (
-                  <option key={entry} value={entry} />
-                ))}
-              </datalist>
-            </label>
-            <label>
-              Zuständig
-              <select
-                value={assignedTo}
-                onChange={(event) => setAssignedTo(event.target.value)}
-              >
-                <option value="">Niemand ausgewählt</option>
-                {members.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.display_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Eintrag
-              <input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="z. B. Milch"
-                required
-              />
-            </label>
-            <label className="full-width-field">
-              Notiz
-              <textarea
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="Optional: Menge, Marke, Hinweis"
-                rows={3}
-              />
-            </label>
-          </div>
-          <button className="primary-button" type="submit" disabled={busy}>
-            Eintrag speichern
-          </button>
-        </form>
-
         <div className="list-stack shopping-groups">
           {groupedItems.every((group) => group.items.length === 0) ? (
             <p className="muted-text">Noch keine Einträge in dieser Ansicht.</p>
@@ -436,7 +520,6 @@ export function ShoppingListPanel({
               if (group.items.length === 0) {
                 return null;
               }
-
               return (
                 <section className="shopping-group" key={group.name}>
                   {activeListName === ALL_LISTS_KEY && (
@@ -468,13 +551,20 @@ export function ShoppingListPanel({
                           key={item.id}
                         >
                           <div className="checkbox-row spread-on-mobile">
-                            <label className="checkbox-row inline">
+                            <label className="shopping-check-title">
                               <input
                                 checked={item.is_done}
                                 onChange={() => void onToggleDone(item)}
                                 type="checkbox"
                               />
-                              <strong>{item.title}</strong>
+                              <div className="shopping-item-title">
+                                {activeListName === ALL_LISTS_KEY && (
+                                  <span className="shopping-list-name">
+                                    {normalizeListName(item.list_name)}
+                                  </span>
+                                )}
+                                <strong>{item.title}</strong>
+                              </div>
                             </label>
                             <div className="card-actions compact-actions">
                               <button
@@ -482,14 +572,14 @@ export function ShoppingListPanel({
                                 onClick={() => startEditing(item)}
                                 type="button"
                               >
-                                Bearbeiten
+                                <span aria-hidden="true">⚙</span>
                               </button>
                               <button
-                                className="danger-button"
+                                className="secondary-button"
                                 onClick={() => void handleDelete(item)}
                                 type="button"
                               >
-                                Löschen
+                                <span aria-hidden="true">🗑️</span>
                               </button>
                             </div>
                           </div>
@@ -498,13 +588,19 @@ export function ShoppingListPanel({
                             <div className="inline-form-grid">
                               <label>
                                 Liste / Laden
-                                <input
+                                <select
                                   value={editingListName}
                                   onChange={(event) =>
                                     setEditingListName(event.target.value)
                                   }
-                                  list={LIST_SUGGESTIONS_ID}
-                                />
+                                  required
+                                >
+                                  {normalizedLists.map((entry) => (
+                                    <option key={entry} value={entry}>
+                                      {entry}
+                                    </option>
+                                  ))}
+                                </select>
                               </label>
                               <label>
                                 Zuständig
@@ -531,6 +627,25 @@ export function ShoppingListPanel({
                                   }
                                 />
                               </label>
+                              <label>
+                                Menge
+                                <input
+                                  value={editingQuantity}
+                                  onChange={(event) =>
+                                    setEditingQuantity(event.target.value)
+                                  }
+                                />
+                              </label>
+
+                              <label>
+                                Kategorie
+                                <input
+                                  value={editingCategory}
+                                  onChange={(event) =>
+                                    setEditingCategory(event.target.value)
+                                  }
+                                />
+                              </label>
                               <label className="full-width-field">
                                 Notiz
                                 <textarea
@@ -547,24 +662,25 @@ export function ShoppingListPanel({
                                   onClick={() => void handleSave(item.id)}
                                   type="button"
                                 >
-                                  Speichern
+                                  <span aria-hidden="true">✓</span>
                                 </button>
                                 <button
                                   className="muted-button"
                                   onClick={stopEditing}
                                   type="button"
                                 >
-                                  Abbrechen
+                                  <span aria-hidden="true">×</span>
                                 </button>
                               </div>
                             </div>
                           ) : (
                             <div className="shopping-item-meta">
                               {item.notes && <p>{item.notes}</p>}
+                              {item.quantity && <p>Menge: {item.quantity}</p>}
+                              {item.category && (
+                                <p>Kategorie: {item.category}</p>
+                              )}
                               <div className="badge-row">
-                                <span className="pill">
-                                  {normalizeListName(item.list_name)}
-                                </span>
                                 {assigned ? (
                                   <span
                                     className="person-badge"

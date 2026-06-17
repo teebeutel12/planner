@@ -6,6 +6,7 @@ import { FamilyManager } from "./components/FamilyManager";
 import { OverviewPanel } from "./components/OverviewPanel";
 import { ProfileSettingsPanel } from "./components/ProfileSettingsPanel";
 import { ShoppingListPanel } from "./components/ShoppingListPanel";
+import { TodoPanel } from "./components/TodoPanel";
 import { WishListPanel } from "./components/WishListPanel";
 import {
   getNotificationPermission,
@@ -26,6 +27,8 @@ import {
   ShoppingItemInput,
   ShoppingList,
   ThemePreference,
+  TodoInput,
+  TodoItem,
   WishInput,
   WishItem,
 } from "./types";
@@ -44,6 +47,7 @@ const TABS: { id: AppTab; label: string }[] = [
   { id: "overview", label: "Übersicht" },
   { id: "calendar", label: "Kalender" },
   { id: "shopping", label: "Einkauf" },
+  { id: "todos", label: "ToDos" },
   { id: "wishes", label: "Wünsche" },
   { id: "family", label: "Familie" },
   { id: "profile", label: "Profil" },
@@ -60,22 +64,6 @@ function extractErrorMessage(error: unknown) {
   }
 
   return "Es ist ein unerwarteter Fehler aufgetreten.";
-}
-
-function getNotificationStatusLabel(permission: NotificationSupportState) {
-  if (permission === "granted") {
-    return "Aktiv";
-  }
-
-  if (permission === "denied") {
-    return "Blockiert";
-  }
-
-  if (permission === "unsupported") {
-    return "Kein Push";
-  }
-
-  return "Aus";
 }
 
 function getNotificationStatusClass(permission: NotificationSupportState) {
@@ -145,6 +133,24 @@ function getTabIcon(tabId: AppTab) {
           <circle cx="9" cy="20" r="1" />
           <circle cx="18" cy="20" r="1" />
           <path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.5L22 7H7" />
+        </svg>
+      );
+    case "todos":
+      return (
+        <svg
+          aria-hidden="true"
+          className="tab-icon"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <path d="M9 11l2 2 4-4" />
+          <path d="M4 5h16" />
+          <path d="M4 12h3" />
+          <path d="M4 19h16" />
         </svg>
       );
     case "wishes":
@@ -380,6 +386,7 @@ async function fetchAppData(profileId: string) {
       events: [] as EventItem[],
       shoppingLists: [] as ShoppingList[],
       shoppingItems: [] as ShoppingItem[],
+      todos: [] as TodoItem[],
       wishes: [] as WishItem[],
     };
   }
@@ -390,6 +397,7 @@ async function fetchAppData(profileId: string) {
     eventsResponse,
     shoppingListsResponse,
     shoppingResponse,
+    todosResponse,
     wishesResponse,
   ] = await Promise.all([
     supabase.from("families").select("*").eq("id", familyId).single(),
@@ -409,6 +417,11 @@ async function fetchAppData(profileId: string) {
       .order("name", { ascending: true }),
     supabase
       .from("shopping_items")
+      .select("*")
+      .eq("family_id", familyId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("todos")
       .select("*")
       .eq("family_id", familyId)
       .order("created_at", { ascending: false }),
@@ -433,6 +446,9 @@ async function fetchAppData(profileId: string) {
   }
   if (shoppingResponse.error) {
     throw shoppingResponse.error;
+  }
+  if (todosResponse.error) {
+    throw todosResponse.error;
   }
   if (wishesResponse.error) {
     throw wishesResponse.error;
@@ -465,6 +481,7 @@ async function fetchAppData(profileId: string) {
     events: (eventsResponse.data ?? []) as EventItem[],
     shoppingLists,
     shoppingItems,
+    todos: (todosResponse.data ?? []) as TodoItem[],
     wishes: (wishesResponse.data ?? []) as WishItem[],
   };
 }
@@ -477,6 +494,7 @@ export default function App() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
+  const [todos, setTodos] = useState<TodoItem[]>([]);
   const [wishes, setWishes] = useState<WishItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -527,6 +545,7 @@ export default function App() {
         setEvents([]);
         setShoppingLists([]);
         setShoppingItems([]);
+        setTodos([]);
         setWishes([]);
         setLoading(false);
         return;
@@ -548,6 +567,7 @@ export default function App() {
         setEvents(appData.events);
         setShoppingLists(appData.shoppingLists);
         setShoppingItems(appData.shoppingItems);
+        setTodos(appData.todos);
         setWishes(appData.wishes);
 
         if (!appData.family) {
@@ -664,6 +684,7 @@ export default function App() {
     setEvents(appData.events);
     setShoppingLists(appData.shoppingLists);
     setShoppingItems(appData.shoppingItems);
+    setTodos(appData.todos);
     setWishes(appData.wishes);
   }
 
@@ -1004,6 +1025,7 @@ export default function App() {
       setEvents([]);
       setShoppingLists([]);
       setShoppingItems([]);
+      setTodos([]);
       setWishes([]);
       setActiveTab("family");
     }, "Account gelöscht.");
@@ -1279,6 +1301,97 @@ export default function App() {
     });
   }
 
+  async function handleCreateTodo(input: TodoInput) {
+    if (!profile || !family || !supabase) {
+      return;
+    }
+
+    const client = supabase;
+
+    await runAction(async () => {
+      const { error } = await client.from("todos").insert({
+        family_id: family.id,
+        title: input.title.trim(),
+        description: input.description.trim() || null,
+        assigned_to: input.assignedTo || null,
+        due_date: input.dueDate || null,
+        priority: input.priority,
+        created_by: profile.id,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      await refreshData();
+    }, "ToDo gespeichert.");
+  }
+
+  async function handleUpdateTodo(todoId: string, input: TodoInput) {
+    if (!supabase) {
+      return;
+    }
+
+    const client = supabase;
+
+    await runAction(async () => {
+      const { error } = await client
+        .from("todos")
+        .update({
+          title: input.title.trim(),
+          description: input.description.trim() || null,
+          assigned_to: input.assignedTo || null,
+          due_date: input.dueDate || null,
+          priority: input.priority,
+        })
+        .eq("id", todoId);
+
+      if (error) {
+        throw error;
+      }
+
+      await refreshData();
+    }, "ToDo aktualisiert.");
+  }
+
+  async function handleDeleteTodo(todo: TodoItem) {
+    if (!supabase) {
+      return;
+    }
+
+    const client = supabase;
+
+    await runAction(async () => {
+      const { error } = await client.from("todos").delete().eq("id", todo.id);
+      if (error) {
+        throw error;
+      }
+
+      await refreshData();
+    }, "ToDo gelöscht.");
+  }
+
+  async function handleToggleTodoDone(todo: TodoItem) {
+    if (!supabase) {
+      return;
+    }
+
+    const client = supabase;
+
+    await runAction(async () => {
+      const { error } = await client
+        .from("todos")
+        .update({ is_done: !todo.is_done })
+        .eq("id", todo.id);
+
+      if (error) {
+        throw error;
+      }
+
+      await refreshData();
+    });
+  }
+
   async function handleCreateWish(input: WishInput) {
     if (!profile || !family || !supabase) {
       return;
@@ -1426,7 +1539,6 @@ export default function App() {
     <div className="app-shell">
       <header className="topbar">
         <div className="topbar-title">
-          <span className="eyebrow">Planner</span>
           <h1>{family ? family.name : "Familienkonto einrichten"}</h1>
           <p className="topbar-subline">
             <span>{currentProfile?.display_name}</span>
@@ -1434,9 +1546,6 @@ export default function App() {
           </p>
         </div>
         <div className="header-actions">
-          <span className={getNotificationStatusClass(notificationPermission)}>
-            {getNotificationStatusLabel(notificationPermission)}
-          </span>
           <button
             aria-label="Logout"
             className="icon-button logout-button"
@@ -1530,6 +1639,7 @@ export default function App() {
           members={members}
           shoppingLists={shoppingLists}
           shoppingItems={shoppingItems}
+          todos={todos}
           wishes={wishes}
         />
       )}
@@ -1542,6 +1652,7 @@ export default function App() {
           onCreateEvent={handleCreateEvent}
           onUpdateEvent={handleUpdateEvent}
           onDeleteEvent={handleDeleteEvent}
+          todos={todos}
         />
       )}
 
@@ -1558,6 +1669,18 @@ export default function App() {
           onUpdateItem={handleUpdateShoppingItem}
           onDeleteItem={handleDeleteShoppingItem}
           onToggleDone={handleToggleShoppingDone}
+        />
+      )}
+
+      {family && activeTab === "todos" && (
+        <TodoPanel
+          todos={todos}
+          members={members}
+          busy={busy}
+          onCreateTodo={handleCreateTodo}
+          onUpdateTodo={handleUpdateTodo}
+          onDeleteTodo={handleDeleteTodo}
+          onToggleDone={handleToggleTodoDone}
         />
       )}
 

@@ -9,6 +9,7 @@ import {
   toDateInputValue,
 } from "../lib/date";
 import { EventFormInput, EventItem, Profile } from "../types";
+import { TodoItem } from "../types";
 
 interface CalendarBoardProps {
   events: EventItem[];
@@ -17,6 +18,7 @@ interface CalendarBoardProps {
   onCreateEvent: (input: EventFormInput) => Promise<void>;
   onUpdateEvent: (eventId: string, input: EventFormInput) => Promise<void>;
   onDeleteEvent: (event: EventItem) => Promise<void>;
+  todos: TodoItem[];
 }
 
 type EventFormState = {
@@ -85,6 +87,7 @@ export function CalendarBoard({
   onCreateEvent,
   onUpdateEvent,
   onDeleteEvent,
+  todos,
 }: CalendarBoardProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(new Date());

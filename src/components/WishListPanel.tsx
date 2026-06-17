@@ -22,6 +22,7 @@ export function WishListPanel({
 }: WishListPanelProps) {
   const [personId, setPersonId] = useState(members[0]?.id ?? "");
   const [title, setTitle] = useState("");
+  const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [link, setLink] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export function WishListPanel({
     setTitle("");
     setDescription("");
     setLink("");
+    setIsCreateFormOpen(false);
   }
 
   function startEditing(wish: WishItem) {
@@ -92,19 +94,26 @@ export function WishListPanel({
 
   return (
     <div className="dashboard-grid wishes-layout">
-      <section className="card compact-card">
-        <span className="eyebrow">Wünsche</span>
-        <h2>Wunsch hinzufügen</h2>
-        <p className="muted-text">
-          Wünsche pro Person sammeln und später abhaken.
-        </p>
+      <section className="card overview-full-width">
+        <h2>Wünsche</h2>
         {members.length === 0 ? (
           <p className="muted-text">
             Lege zuerst mindestens ein Profil in der Familie an, bevor du
             Wünsche verteilst.
           </p>
-        ) : (
+        ) : isCreateFormOpen ? (
           <form className="form-stack" onSubmit={handleSubmit}>
+            <div className="section-header stacked-mobile">
+              <h3>Neuen Wunsch hinzufügen</h3>
+              <button
+                className="muted-button"
+                onClick={() => setIsCreateFormOpen(false)}
+                type="button"
+              >
+                Abbrechen
+              </button>
+            </div>
+
             <label>
               Für wen?
               <select
@@ -119,6 +128,7 @@ export function WishListPanel({
                 ))}
               </select>
             </label>
+
             <label>
               Wunsch
               <input
@@ -128,6 +138,7 @@ export function WishListPanel({
                 required
               />
             </label>
+
             <label>
               Beschreibung
               <textarea
@@ -137,6 +148,7 @@ export function WishListPanel({
                 rows={3}
               />
             </label>
+
             <label>
               Link
               <input
@@ -146,21 +158,25 @@ export function WishListPanel({
                 type="url"
               />
             </label>
+
             <button className="primary-button" type="submit" disabled={busy}>
               Wunsch speichern
             </button>
           </form>
+        ) : (
+          <button
+            className="primary-button"
+            onClick={() => setIsCreateFormOpen(true)}
+            type="button"
+            style={{ marginBottom: 20 }}
+          >
+            + Wunsch hinzufügen
+          </button>
         )}
-      </section>
-
-      <section className="card overview-full-width">
-        <div className="section-header stacked-mobile">
-          <div>
-            <h2>Wunschlisten</h2>
-            <p className="muted-text">
-              Farbig sortiert nach Personen mit klarer Statusansicht.
-            </p>
-          </div>
+        <div
+          className="section-header stacked-mobile"
+          style={{ marginBottom: 20 }}
+        >
           <span className="pill">
             {wishes.filter((wish) => !wish.is_fulfilled).length} offen
           </span>
@@ -168,7 +184,7 @@ export function WishListPanel({
         <div className="wish-columns">
           {groupedWishes.map(({ member, wishes: memberWishes }) => (
             <div className="wish-column" key={member.id}>
-              <div className="person-title-row">
+              <div className="person-title-row" style={{ marginBottom: 10 }}>
                 <span
                   className="color-dot"
                   style={{ backgroundColor: member.color }}
@@ -256,40 +272,46 @@ export function WishListPanel({
                       ) : (
                         <>
                           <div>
-                            <strong>{wish.title}</strong>
-                            {wish.description && <p>{wish.description}</p>}
-                            {wish.link && (
-                              <a
-                                href={wish.link}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Zum Link
-                              </a>
-                            )}
+                            <div className="wish-content">
+                              <label className="wish-checkbox">
+                                <input
+                                  checked={wish.is_fulfilled}
+                                  onChange={() => void onToggleFulfilled(wish)}
+                                  type="checkbox"
+                                />
+                              </label>
+
+                              <div className="wish-text">
+                                <strong>{wish.title}</strong>
+
+                                {wish.description && <p>{wish.description}</p>}
+
+                                {wish.link && (
+                                  <a
+                                    href={wish.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    Zum Link
+                                  </a>
+                                )}
+                              </div>
+                            </div>
                           </div>
                           <div className="card-actions compact-actions">
-                            <label className="checkbox-row inline">
-                              <input
-                                checked={wish.is_fulfilled}
-                                onChange={() => void onToggleFulfilled(wish)}
-                                type="checkbox"
-                              />
-                              Erfüllt
-                            </label>
                             <button
                               className="secondary-button"
                               onClick={() => startEditing(wish)}
                               type="button"
                             >
-                              Bearbeiten
+                              <span aria-hidden="true">⚙</span>
                             </button>
                             <button
-                              className="danger-button"
+                              className="secondary-button"
                               onClick={() => void handleDelete(wish)}
                               type="button"
                             >
-                              Löschen
+                              <span aria-hidden="true">🗑️</span>
                             </button>
                           </div>
                         </>

@@ -192,15 +192,6 @@ export function ProfileSettingsPanel({
             <input value={currentProfile.email} type="email" disabled />
           </label>
           <label>
-            Avatar-URL
-            <input
-              value={avatarUrl}
-              onChange={(event) => setAvatarUrl(event.target.value)}
-              placeholder="https://..."
-              type="url"
-            />
-          </label>
-          <label>
             Theme
             <select
               value={themePreference}
