@@ -69,6 +69,15 @@ export function OverviewPanel({
         </div>
         <div className="stats-grid">
           <article className="summary-card">
+            <span className="muted-label">Nächste Termine</span>
+            <strong>{allUpcomingEvents.length}</strong>
+            <p>
+              {upcomingEvents.length > 0
+                ? "stehen noch an"
+                : "aktuell nichts geplant"}
+            </p>
+          </article>
+          <article className="summary-card">
             <span className="muted-label">Offene ToDos</span>
             <strong>{openTodos.length}</strong>
             <p>warten noch auf Erledigung</p>
@@ -140,9 +149,6 @@ export function OverviewPanel({
         <div className="section-header stacked-mobile">
           <div>
             <h2>Offene Einkaufslisten</h2>
-            <p className="muted-text">
-              Was sollte als Nächstes und in welchem Laden besorgt werden?
-            </p>
           </div>
           <span className="pill">{openShoppingItems.length}</span>
         </div>
@@ -189,9 +195,6 @@ export function OverviewPanel({
         <div className="section-header stacked-mobile">
           <div>
             <h2>Wunschlisten nach Personen</h2>
-            <p className="muted-text">
-              Jede Person mit eigener, farblich sortierter Liste.
-            </p>
           </div>
           <span className="pill">{activeWishes.length}</span>
         </div>

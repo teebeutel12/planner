@@ -89,7 +89,6 @@ export function CalendarBoard({
   onDeleteEvent,
   todos,
 }: CalendarBoardProps) {
-  void todos;
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [activeEvent, setActiveEvent] = useState<EventItem | null>(null);
@@ -126,6 +125,14 @@ export function CalendarBoard({
     () =>
       sortedEvents.filter((event) => isSameDay(event.starts_at, selectedDay)),
     [selectedDay, sortedEvents],
+  );
+  const selectedDayTodos = useMemo(
+    () =>
+      todos.filter(
+        (todo) =>
+          todo.due_date && isSameDay(`${todo.due_date}T00:00:00`, selectedDay),
+      ),
+    [selectedDay, todos],
   );
 
   const selectedMonthEvents = useMemo(
@@ -339,6 +346,10 @@ export function CalendarBoard({
             const dayEvents = sortedEvents.filter((entry) =>
               isSameDay(entry.starts_at, day),
             );
+            const dayTodos = todos.filter(
+              (todo) =>
+                todo.due_date && isSameDay(`${todo.due_date}T00:00:00`, day),
+            );
             const isCurrentMonth = day.getMonth() === selectedMonth.getMonth();
             const isToday = isSameDay(day, new Date());
             const isSelectedDay = isSameDay(day, selectedDay);
@@ -364,10 +375,10 @@ export function CalendarBoard({
                   >
                     {day.getDate()}
                   </span>
-                  {dayEvents.length > 0 && (
-                    <span className="calendar-day-count">
-                      {dayEvents.length}
-                    </span>
+                  {dayEvents.length + dayTodos.length > 2 && (
+                    <small style={{ color: "white" }}>
+                      +{dayEvents.length + dayTodos.length - 2}
+                    </small>
                   )}
                 </div>
                 <div className="calendar-day-events">
@@ -391,6 +402,21 @@ export function CalendarBoard({
                       </button>
                     );
                   })}
+                  {dayTodos
+                    .slice(0, Math.max(0, 2 - dayEvents.length))
+                    .map((todo) => (
+                      <div
+                        className={
+                          todo.is_done
+                            ? "calendar-chip calendar-todo-chip is-done"
+                            : "calendar-chip calendar-todo-chip"
+                        }
+                        key={todo.id}
+                      >
+                        <strong>☑ {todo.title}</strong>
+                        <small>ToDo</small>
+                      </div>
+                    ))}
                   {dayEvents.length > 2 && (
                     <small>+ {dayEvents.length - 2} weitere</small>
                   )}
@@ -422,44 +448,61 @@ export function CalendarBoard({
         </div>
 
         <div className="list-stack day-agenda-list">
-          {selectedDayEvents.length === 0 ? (
+          {selectedDayEvents.length === 0 && selectedDayTodos.length === 0 ? (
             <p className="muted-text">
               Für diesen Tag ist noch nichts geplant.
             </p>
           ) : (
-            selectedDayEvents.map((event) => (
-              <button
-                className="day-agenda-item"
-                key={event.id}
-                onClick={() => setActiveEvent(event)}
-                type="button"
-              >
-                <div>
-                  <strong>{event.title}</strong>
-                  <p>
-                    {formatTime(event.starts_at)}
-                    {event.ends_at ? ` – ${formatTime(event.ends_at)}` : ""}
-                  </p>
-                </div>
-                <div className="calendar-event-dots">
-                  {event.participant_ids.slice(0, 4).map((participantId) => {
-                    const participant = getParticipant(participantId);
-                    if (!participant) {
-                      return null;
-                    }
+            <>
+              {selectedDayEvents.map((event) => (
+                <button
+                  className="day-agenda-item"
+                  key={event.id}
+                  onClick={() => setActiveEvent(event)}
+                  type="button"
+                >
+                  <div>
+                    <strong>{event.title}</strong>
+                    <p>
+                      {formatTime(event.starts_at)}
+                      {event.ends_at ? ` – ${formatTime(event.ends_at)}` : ""}
+                    </p>
+                  </div>
+                  <div className="calendar-event-dots">
+                    {event.participant_ids.slice(0, 4).map((participantId) => {
+                      const participant = getParticipant(participantId);
+                      if (!participant) return null;
 
-                    return (
-                      <span
-                        className="color-dot"
-                        key={participant.id}
-                        style={{ backgroundColor: participant.color }}
-                        title={participant.display_name}
-                      />
-                    );
-                  })}
+                      return (
+                        <span
+                          className="color-dot"
+                          key={participant.id}
+                          style={{ backgroundColor: participant.color }}
+                          title={participant.display_name}
+                        />
+                      );
+                    })}
+                  </div>
+                </button>
+              ))}
+
+              {selectedDayTodos.map((todo) => (
+                <div
+                  className={
+                    todo.is_done
+                      ? "day-agenda-item todo-agenda-item is-done"
+                      : "day-agenda-item todo-agenda-item"
+                  }
+                  key={todo.id}
+                >
+                  <div>
+                    <strong>☑ {todo.title}</strong>
+                    {todo.description && <p>{todo.description}</p>}
+                    <p className="muted-text">ToDo</p>
+                  </div>
                 </div>
-              </button>
-            ))
+              ))}
+            </>
           )}
         </div>
       </section>
@@ -667,14 +710,14 @@ export function CalendarBoard({
                       onClick={() => startEditing(entry)}
                       type="button"
                     >
-                      Bearbeiten
+                      <span aria-hidden="true">⚙</span>
                     </button>
                     <button
                       className="danger-button"
                       onClick={() => void handleDelete(entry)}
                       type="button"
                     >
-                      Löschen
+                      <span aria-hidden="true">🗑️</span>
                     </button>
                   </div>
                 </div>
@@ -751,14 +794,14 @@ export function CalendarBoard({
                 onClick={() => startEditing(activeEvent)}
                 type="button"
               >
-                Bearbeiten
+                <span aria-hidden="true">⚙</span>
               </button>
               <button
                 className="danger-button"
                 onClick={() => void handleDelete(activeEvent)}
                 type="button"
               >
-                Löschen
+                <span aria-hidden="true">🗑️</span>
               </button>
             </div>
           </div>
