@@ -38,6 +38,15 @@ create table if not exists public.events (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.shopping_lists (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references public.families (id) on delete cascade,
+  name text not null,
+  created_by uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default timezone('utc', now()),
+  constraint shopping_lists_family_id_name_key unique (family_id, name)
+);
+
 create table if not exists public.shopping_items (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null references public.families (id) on delete cascade,
@@ -66,6 +75,7 @@ alter table public.profiles enable row level security;
 alter table public.families enable row level security;
 alter table public.family_members enable row level security;
 alter table public.events enable row level security;
+alter table public.shopping_lists enable row level security;
 alter table public.shopping_items enable row level security;
 alter table public.wishes enable row level security;
 
@@ -188,6 +198,53 @@ using (
   )
 );
 
+create policy "family members can read shopping lists"
+on public.shopping_lists
+for select
+using (
+  exists (
+    select 1 from public.family_members fm
+    where fm.family_id = shopping_lists.family_id and fm.profile_id = auth.uid()
+  )
+);
+
+create policy "family members can create shopping lists"
+on public.shopping_lists
+for insert
+with check (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.family_members fm
+    where fm.family_id = shopping_lists.family_id and fm.profile_id = auth.uid()
+  )
+);
+
+create policy "family members can update shopping lists"
+on public.shopping_lists
+for update
+using (
+  exists (
+    select 1 from public.family_members fm
+    where fm.family_id = shopping_lists.family_id and fm.profile_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1 from public.family_members fm
+    where fm.family_id = shopping_lists.family_id and fm.profile_id = auth.uid()
+  )
+);
+
+create policy "family members can delete shopping lists"
+on public.shopping_lists
+for delete
+using (
+  exists (
+    select 1 from public.family_members fm
+    where fm.family_id = shopping_lists.family_id and fm.profile_id = auth.uid()
+  )
+);
+
 create policy "family members can read shopping items"
 on public.shopping_items
 for select
@@ -202,7 +259,7 @@ create policy "family members can create shopping items"
 on public.shopping_items
 for insert
 with check (
-  auth.uid() = added_by
+  added_by = auth.uid()
   and exists (
     select 1 from public.family_members fm
     where fm.family_id = shopping_items.family_id and fm.profile_id = auth.uid()

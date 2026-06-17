@@ -24,6 +24,7 @@ import {
   ProfileSettingsInput,
   ShoppingItem,
   ShoppingItemInput,
+  ShoppingList,
   ThemePreference,
   WishInput,
   WishItem,
@@ -48,6 +49,10 @@ const TABS: { id: AppTab; label: string }[] = [
   { id: "profile", label: "Profil" },
 ];
 const NOTIFICATION_PROMPT_STORAGE_KEY = "planner-notification-prompted";
+
+function notificationPromptStorageKey(userId: string) {
+  return `${NOTIFICATION_PROMPT_STORAGE_KEY}:${userId}`;
+}
 
 function extractErrorMessage(error: unknown) {
   if (error instanceof Error) {
@@ -210,6 +215,60 @@ function normalizeShoppingListName(listName: string) {
   return listName.trim() || "Allgemein";
 }
 
+function mergeShoppingLists(
+  lists: ShoppingList[],
+  items: ShoppingItem[],
+  fallbackProfileId: string,
+  familyId: string,
+) {
+  const byName = new Map(
+    lists.map((list) => [normalizeShoppingListName(list.name), list]),
+  );
+
+  items.forEach((item) => {
+    const normalized = normalizeShoppingListName(item.list_name);
+    if (!byName.has(normalized)) {
+      byName.set(normalized, {
+        id: `derived-${normalized}`,
+        family_id: familyId,
+        name: normalized,
+        created_by: fallbackProfileId,
+        created_at: item.created_at,
+      });
+    }
+  });
+
+  return Array.from(byName.values()).sort((left, right) =>
+    left.name.localeCompare(right.name, "de"),
+  );
+}
+
+async function ensureShoppingListExists(options: {
+  familyId: string;
+  profileId: string;
+  listName: string;
+}) {
+  if (!supabase) {
+    throw new Error("Supabase ist nicht konfiguriert.");
+  }
+
+  const normalizedName = normalizeShoppingListName(options.listName);
+  const { error } = await supabase.from("shopping_lists").upsert(
+    {
+      family_id: options.familyId,
+      name: normalizedName,
+      created_by: options.profileId,
+    },
+    { onConflict: "family_id,name", ignoreDuplicates: true },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return normalizedName;
+}
+
 function buildEventPayload(
   input: EventFormInput,
   profileId: string,
@@ -319,6 +378,7 @@ async function fetchAppData(profileId: string) {
       family: null,
       members: [] as Profile[],
       events: [] as EventItem[],
+      shoppingLists: [] as ShoppingList[],
       shoppingItems: [] as ShoppingItem[],
       wishes: [] as WishItem[],
     };
@@ -328,6 +388,7 @@ async function fetchAppData(profileId: string) {
     familyResponse,
     familyMembersResponse,
     eventsResponse,
+    shoppingListsResponse,
     shoppingResponse,
     wishesResponse,
   ] = await Promise.all([
@@ -341,6 +402,11 @@ async function fetchAppData(profileId: string) {
       .select("*")
       .eq("family_id", familyId)
       .order("starts_at", { ascending: true }),
+    supabase
+      .from("shopping_lists")
+      .select("*")
+      .eq("family_id", familyId)
+      .order("name", { ascending: true }),
     supabase
       .from("shopping_items")
       .select("*")
@@ -362,6 +428,9 @@ async function fetchAppData(profileId: string) {
   if (eventsResponse.error) {
     throw eventsResponse.error;
   }
+  if (shoppingListsResponse.error) {
+    throw shoppingListsResponse.error;
+  }
   if (shoppingResponse.error) {
     throw shoppingResponse.error;
   }
@@ -382,11 +451,20 @@ async function fetchAppData(profileId: string) {
     throw profilesError;
   }
 
+  const shoppingItems = (shoppingResponse.data ?? []) as ShoppingItem[];
+  const shoppingLists = mergeShoppingLists(
+    (shoppingListsResponse.data ?? []) as ShoppingList[],
+    shoppingItems,
+    profileId,
+    familyId,
+  );
+
   return {
     family: familyResponse.data as Family,
     members: (profiles ?? []) as Profile[],
     events: (eventsResponse.data ?? []) as EventItem[],
-    shoppingItems: (shoppingResponse.data ?? []) as ShoppingItem[],
+    shoppingLists,
+    shoppingItems,
     wishes: (wishesResponse.data ?? []) as WishItem[],
   };
 }
@@ -397,6 +475,7 @@ export default function App() {
   const [family, setFamily] = useState<Family | null>(null);
   const [members, setMembers] = useState<Profile[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [wishes, setWishes] = useState<WishItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -446,6 +525,7 @@ export default function App() {
         setFamily(null);
         setMembers([]);
         setEvents([]);
+        setShoppingLists([]);
         setShoppingItems([]);
         setWishes([]);
         setLoading(false);
@@ -466,6 +546,7 @@ export default function App() {
         setFamily(appData.family);
         setMembers(appData.members);
         setEvents(appData.events);
+        setShoppingLists(appData.shoppingLists);
         setShoppingItems(appData.shoppingItems);
         setWishes(appData.wishes);
 
@@ -507,13 +588,12 @@ export default function App() {
       return;
     }
 
-    if (
-      window.localStorage.getItem(NOTIFICATION_PROMPT_STORAGE_KEY) === "true"
-    ) {
+    const storageKey = notificationPromptStorageKey(session.user.id);
+    if (window.localStorage.getItem(storageKey) === "true") {
       return;
     }
 
-    window.localStorage.setItem(NOTIFICATION_PROMPT_STORAGE_KEY, "true");
+    window.localStorage.setItem(storageKey, "true");
 
     let cancelled = false;
     const timer = window.setTimeout(() => {
@@ -582,6 +662,7 @@ export default function App() {
     setFamily(appData.family);
     setMembers(appData.members);
     setEvents(appData.events);
+    setShoppingLists(appData.shoppingLists);
     setShoppingItems(appData.shoppingItems);
     setWishes(appData.wishes);
   }
@@ -921,6 +1002,7 @@ export default function App() {
       setFamily(null);
       setMembers([]);
       setEvents([]);
+      setShoppingLists([]);
       setShoppingItems([]);
       setWishes([]);
       setActiveTab("family");
@@ -995,6 +1077,101 @@ export default function App() {
     }, "Termin gelöscht.");
   }
 
+  async function handleCreateShoppingList(name: string) {
+    if (!profile || !family) {
+      return;
+    }
+
+    await runAction(async () => {
+      await ensureShoppingListExists({
+        familyId: family.id,
+        profileId: profile.id,
+        listName: name,
+      });
+      await refreshData();
+    }, "Einkaufsliste gespeichert.");
+  }
+
+  async function handleRenameShoppingList(oldName: string, newName: string) {
+    if (!profile || !family || !supabase) {
+      return;
+    }
+
+    const client = supabase;
+    const previousName = normalizeShoppingListName(oldName);
+    const nextName = normalizeShoppingListName(newName);
+
+    await runAction(async () => {
+      if (previousName !== nextName) {
+        await ensureShoppingListExists({
+          familyId: family.id,
+          profileId: profile.id,
+          listName: nextName,
+        });
+
+        const { error: itemsError } = await client
+          .from("shopping_items")
+          .update({ list_name: nextName })
+          .eq("family_id", family.id)
+          .eq("list_name", previousName);
+
+        if (itemsError) {
+          throw itemsError;
+        }
+      }
+
+      const { error: deletePreviousError } = await client
+        .from("shopping_lists")
+        .delete()
+        .eq("family_id", family.id)
+        .eq("name", previousName);
+
+      if (deletePreviousError) {
+        throw deletePreviousError;
+      }
+
+      await ensureShoppingListExists({
+        familyId: family.id,
+        profileId: profile.id,
+        listName: nextName,
+      });
+      await refreshData();
+    }, "Einkaufsliste aktualisiert.");
+  }
+
+  async function handleDeleteShoppingList(name: string) {
+    if (!family || !supabase) {
+      return;
+    }
+
+    const client = supabase;
+    const normalizedName = normalizeShoppingListName(name);
+
+    await runAction(async () => {
+      const { error: itemsError } = await client
+        .from("shopping_items")
+        .delete()
+        .eq("family_id", family.id)
+        .eq("list_name", normalizedName);
+
+      if (itemsError) {
+        throw itemsError;
+      }
+
+      const { error: listError } = await client
+        .from("shopping_lists")
+        .delete()
+        .eq("family_id", family.id)
+        .eq("name", normalizedName);
+
+      if (listError) {
+        throw listError;
+      }
+
+      await refreshData();
+    }, "Einkaufsliste gelöscht.");
+  }
+
   async function handleCreateShoppingItem(input: ShoppingItemInput) {
     if (!profile || !family || !supabase) {
       return;
@@ -1003,9 +1180,15 @@ export default function App() {
     const client = supabase;
 
     await runAction(async () => {
+      const normalizedListName = await ensureShoppingListExists({
+        familyId: family.id,
+        profileId: profile.id,
+        listName: input.listName,
+      });
+
       const { error } = await client.from("shopping_items").insert({
         family_id: family.id,
-        list_name: normalizeShoppingListName(input.listName),
+        list_name: normalizedListName,
         title: input.title.trim(),
         notes: input.notes.trim() || null,
         assigned_to: input.assignedTo || null,
@@ -1024,17 +1207,23 @@ export default function App() {
     itemId: string,
     input: ShoppingItemInput,
   ) {
-    if (!supabase) {
+    if (!profile || !family || !supabase) {
       return;
     }
 
     const client = supabase;
 
     await runAction(async () => {
+      const normalizedListName = await ensureShoppingListExists({
+        familyId: family.id,
+        profileId: profile.id,
+        listName: input.listName,
+      });
+
       const { error } = await client
         .from("shopping_items")
         .update({
-          list_name: normalizeShoppingListName(input.listName),
+          list_name: normalizedListName,
           title: input.title.trim(),
           notes: input.notes.trim() || null,
           assigned_to: input.assignedTo || null,
@@ -1339,6 +1528,7 @@ export default function App() {
         <OverviewPanel
           events={events}
           members={members}
+          shoppingLists={shoppingLists}
           shoppingItems={shoppingItems}
           wishes={wishes}
         />
@@ -1358,8 +1548,12 @@ export default function App() {
       {family && activeTab === "shopping" && (
         <ShoppingListPanel
           items={shoppingItems}
+          lists={shoppingLists}
           members={members}
           busy={busy}
+          onCreateList={handleCreateShoppingList}
+          onRenameList={handleRenameShoppingList}
+          onDeleteList={handleDeleteShoppingList}
           onCreateItem={handleCreateShoppingItem}
           onUpdateItem={handleUpdateShoppingItem}
           onDeleteItem={handleDeleteShoppingItem}

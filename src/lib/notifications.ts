@@ -2,6 +2,7 @@ import { Capacitor } from "@capacitor/core";
 import {
   LocalNotifications,
   type PermissionStatus,
+  type SettingsPermissionStatus,
 } from "@capacitor/local-notifications";
 import { EventItem, Profile } from "../types";
 import { formatDateTime } from "./date";
@@ -12,6 +13,9 @@ const STORAGE_PREFIX = "planner-reminder-fired";
 const UPCOMING_WINDOW_MS = 24 * 60 * 60 * 1000;
 const IMMEDIATE_GRACE_MS = 5 * 60 * 1000;
 const ANDROID_REMINDER_CHANNEL_ID = "planner-event-reminders";
+
+let nativeSyncToken = 0;
+let nativeSyncQueue: Promise<void> = Promise.resolve();
 
 function isNativeNotificationsSupported() {
   return typeof window !== "undefined" && Capacitor.isNativePlatform();
@@ -29,6 +33,16 @@ function mapNativePermission(
   }
 
   return "default";
+}
+
+function isAndroidNativePlatform() {
+  return (
+    isNativeNotificationsSupported() && Capacitor.getPlatform() === "android"
+  );
+}
+
+function mapExactAlarmPermission(status: SettingsPermissionStatus) {
+  return status.exact_alarm;
 }
 
 async function ensureAndroidReminderChannel() {
@@ -75,12 +89,28 @@ async function clearNativeScheduledNotifications() {
   await LocalNotifications.cancel({ notifications: pending.notifications });
 }
 
-async function syncNativeScheduledNotifications(options: {
-  events: EventItem[];
-  currentProfile: Profile | null;
-  permission: NotificationSupportState;
-}) {
-  if (!isNativeNotificationsSupported()) {
+async function isExactAlarmAvailable() {
+  if (!isAndroidNativePlatform()) {
+    return true;
+  }
+
+  const status = await LocalNotifications.checkExactNotificationSetting();
+  return mapExactAlarmPermission(status) === "granted";
+}
+
+function isLatestNativeSync(token: number) {
+  return token === nativeSyncToken;
+}
+
+async function syncNativeScheduledNotifications(
+  options: {
+    events: EventItem[];
+    currentProfile: Profile | null;
+    permission: NotificationSupportState;
+  },
+  token: number,
+) {
+  if (!isNativeNotificationsSupported() || !isLatestNativeSync(token)) {
     return;
   }
 
@@ -90,7 +120,19 @@ async function syncNativeScheduledNotifications(options: {
   }
 
   await ensureAndroidReminderChannel();
+  if (!isLatestNativeSync(token)) {
+    return;
+  }
+
+  const exactAlarmAvailable = await isExactAlarmAvailable();
+  if (!isLatestNativeSync(token)) {
+    return;
+  }
+
   await clearNativeScheduledNotifications();
+  if (!isLatestNativeSync(token)) {
+    return;
+  }
 
   const now = Date.now();
   const notifications = options.events
@@ -119,7 +161,7 @@ async function syncNativeScheduledNotifications(options: {
           body: buildNotificationBody(event),
           schedule: {
             at: new Date(triggerAt),
-            allowWhileIdle: true,
+            allowWhileIdle: exactAlarmAvailable,
           },
           channelId: ANDROID_REMINDER_CHANNEL_ID,
           extra: {
@@ -129,7 +171,7 @@ async function syncNativeScheduledNotifications(options: {
       ];
     });
 
-  if (notifications.length === 0) {
+  if (notifications.length === 0 || !isLatestNativeSync(token)) {
     return;
   }
 
@@ -164,6 +206,9 @@ export async function requestNotificationPermission(): Promise<NotificationSuppo
 
     if (permission === "granted") {
       await ensureAndroidReminderChannel();
+      if (isAndroidNativePlatform()) {
+        await LocalNotifications.checkExactNotificationSetting();
+      }
     }
 
     return permission;
@@ -217,8 +262,17 @@ export function scheduleEventNotifications(options: {
   permission: NotificationSupportState;
 }) {
   if (isNativeNotificationsSupported()) {
-    void syncNativeScheduledNotifications(options);
-    return () => undefined;
+    const token = ++nativeSyncToken;
+    nativeSyncQueue = nativeSyncQueue
+      .catch(() => undefined)
+      .then(() => syncNativeScheduledNotifications(options, token))
+      .catch(() => undefined);
+
+    return () => {
+      if (nativeSyncToken === token) {
+        nativeSyncToken += 1;
+      }
+    };
   }
 
   if (

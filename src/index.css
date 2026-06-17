@@ -870,14 +870,44 @@ ol {
     color: #f8fafc;
 }
 
-.shopping-list-pills,
 .shopping-item-meta,
-.shopping-groups {
+.shopping-groups,
+.shopping-management-grid,
+.shopping-summary-grid {
     display: grid;
     gap: 0.85rem;
 }
 
-.shopping-list-pills {
+.shopping-list-tabs {
+    display: flex;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+}
+
+.shopping-list-tab {
+    background: rgba(30, 41, 59, 0.72);
+}
+
+.shopping-list-tab.active {
+    background: linear-gradient(135deg, #38bdf8 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.shopping-summary-grid,
+.shopping-management-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.shopping-list-form-card,
+.shopping-item-create-form {
+    padding: 1rem;
+    border-radius: 20px;
+    background: rgba(30, 41, 59, 0.35);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.shopping-item-create-form {
     margin-bottom: 1rem;
 }
 
@@ -980,7 +1010,9 @@ ol {
 
     .inline-form-grid,
     .calendar-form-card,
-    .calendar-side-card {
+    .calendar-side-card,
+    .shopping-summary-grid,
+    .shopping-management-grid {
         grid-template-columns: 1fr;
     }
 
@@ -1240,7 +1272,8 @@ body[data-theme="light"] a {
     .wish-columns,
     .checkbox-grid,
     .person-list,
-    .calendar-form-placeholder-stats {
+    .calendar-form-placeholder-stats,
+    .shopping-list-tabs {
         display: grid;
         grid-template-columns: 1fr;
     }

@@ -1,9 +1,16 @@
-import { EventItem, Profile, ShoppingItem, WishItem } from "../types";
+import {
+  EventItem,
+  Profile,
+  ShoppingItem,
+  ShoppingList,
+  WishItem,
+} from "../types";
 import { formatDateTime } from "../lib/date";
 
 interface OverviewPanelProps {
   events: EventItem[];
   members: Profile[];
+  shoppingLists: ShoppingList[];
   shoppingItems: ShoppingItem[];
   wishes: WishItem[];
 }
@@ -15,25 +22,25 @@ function memberNameMap(members: Profile[]) {
 export function OverviewPanel({
   events,
   members,
+  shoppingLists,
   shoppingItems,
   wishes,
 }: OverviewPanelProps) {
   const membersById = memberNameMap(members);
-  const upcomingEvents = [...events]
-    .filter(
-      (event) =>
-        new Date(event.starts_at).getTime() >= Date.now() - 24 * 60 * 60 * 1000,
-    )
+  const allUpcomingEvents = [...events]
+    .filter((event) => new Date(event.starts_at).getTime() >= Date.now())
     .sort(
       (left, right) =>
         new Date(left.starts_at).getTime() -
         new Date(right.starts_at).getTime(),
-    )
-    .slice(0, 6);
+    );
+  const upcomingEvents = allUpcomingEvents.slice(0, 6);
 
-  const openShoppingItems = shoppingItems
-    .filter((item) => !item.is_done)
-    .slice(0, 8);
+  const openShoppingItems = shoppingItems.filter((item) => !item.is_done);
+  const previewShoppingItems = openShoppingItems.slice(0, 8);
+  const openShoppingLists = shoppingLists.filter((list) =>
+    openShoppingItems.some((item) => item.list_name === list.name),
+  );
   const activeWishes = wishes.filter((wish) => !wish.is_fulfilled);
 
   const wishesByPerson = members.map((member) => ({
@@ -44,40 +51,42 @@ export function OverviewPanel({
   }));
 
   return (
-    <div className="dashboard-grid">
+    <div className="dashboard-grid overview-layout">
       <section className="card overview-full-width compact-card">
         <span className="eyebrow">Übersicht</span>
         <div className="section-header stacked-mobile">
           <div>
             <h2>Alles auf einen Blick</h2>
             <p className="muted-text">
-              Die wichtigsten Termine, offenen Einkäufe und Wünsche deiner
-              Personen.
+              Die wichtigsten Termine, Einkaufslisten und Wünsche deiner
+              Familie.
             </p>
           </div>
         </div>
         <div className="stats-grid">
           <article className="summary-card">
             <span className="muted-label">Nächste Termine</span>
-            <strong>{upcomingEvents.length}</strong>
-            <p>für die nächsten Tage geplant</p>
+            <strong>{allUpcomingEvents.length}</strong>
+            <p>
+              {upcomingEvents.length > 0
+                ? "stehen noch an"
+                : "aktuell nichts geplant"}
+            </p>
+          </article>
+          <article className="summary-card">
+            <span className="muted-label">Offene Einkaufslisten</span>
+            <strong>{openShoppingLists.length}</strong>
+            <p>haben aktuell offene Einträge</p>
           </article>
           <article className="summary-card">
             <span className="muted-label">Offene Einkäufe</span>
-            <strong>
-              {shoppingItems.filter((item) => !item.is_done).length}
-            </strong>
-            <p>stehen aktuell auf eurer Liste</p>
+            <strong>{openShoppingItems.length}</strong>
+            <p>stehen aktuell auf euren Listen</p>
           </article>
           <article className="summary-card">
             <span className="muted-label">Offene Wünsche</span>
             <strong>{activeWishes.length}</strong>
             <p>sind noch nicht erfüllt</p>
-          </article>
-          <article className="summary-card">
-            <span className="muted-label">Verbundene Personen</span>
-            <strong>{members.length}</strong>
-            <p>haben Zugriff auf diesen Bereich</p>
           </article>
         </div>
       </section>
@@ -86,9 +95,9 @@ export function OverviewPanel({
         <div className="section-header stacked-mobile">
           <div>
             <h2>Nächste Termine</h2>
-            <p className="muted-text">Wer hat was als Nächstes auf dem Plan?</p>
+            <p className="muted-text">Was steht als Nächstes an?</p>
           </div>
-          <span className="pill">{upcomingEvents.length}</span>
+          <span className="pill">{allUpcomingEvents.length}</span>
         </div>
         <div className="list-stack">
           {upcomingEvents.length === 0 ? (
@@ -138,10 +147,12 @@ export function OverviewPanel({
           <span className="pill">{openShoppingItems.length}</span>
         </div>
         <div className="list-stack">
-          {openShoppingItems.length === 0 ? (
-            <p className="muted-text">Alles erledigt – die Liste ist leer.</p>
+          {previewShoppingItems.length === 0 ? (
+            <p className="muted-text">
+              Alles erledigt – eure Listen sind leer.
+            </p>
           ) : (
-            openShoppingItems.map((item) => {
+            previewShoppingItems.map((item) => {
               const assigned = item.assigned_to
                 ? membersById.get(item.assigned_to)
                 : null;

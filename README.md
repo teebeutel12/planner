@@ -55,6 +55,7 @@ Eine Familien-App als MVP mit diesen Funktionen:
 - `families`: Familienkonto mit Einladungscode
 - `family_members`: Zuordnung von Personen zu einem Familienkonto
 - `events`: Termine mit Teilnehmerliste und optionaler Erinnerung
+- `shopping_lists`: benannte Einkaufslisten bzw. Läden pro Familie
 - `shopping_items`: Einkaufseinträge mit Listen-/Ladenname und optionaler Zuständigkeit
 - `wishes`: Wünsche je Person
 

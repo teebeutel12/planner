@@ -37,6 +37,14 @@ export interface EventItem {
   created_at: string;
 }
 
+export interface ShoppingList {
+  id: string;
+  family_id: string;
+  name: string;
+  created_by: string;
+  created_at: string;
+}
+
 export interface ShoppingItem {
   id: string;
   family_id: string;

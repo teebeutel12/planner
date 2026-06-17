@@ -98,52 +98,59 @@ export function WishListPanel({
         <p className="muted-text">
           Wünsche pro Person sammeln und später abhaken.
         </p>
-        <form className="form-stack" onSubmit={handleSubmit}>
-          <label>
-            Für wen?
-            <select
-              value={personId}
-              onChange={(event) => setPersonId(event.target.value)}
-              required
-            >
-              {members.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.display_name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Wunsch
-            <input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="z. B. Lego-Set"
-              required
-            />
-          </label>
-          <label>
-            Beschreibung
-            <textarea
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Größe, Farbe, Idee ..."
-              rows={3}
-            />
-          </label>
-          <label>
-            Link
-            <input
-              value={link}
-              onChange={(event) => setLink(event.target.value)}
-              placeholder="https://..."
-              type="url"
-            />
-          </label>
-          <button className="primary-button" type="submit" disabled={busy}>
-            Wunsch speichern
-          </button>
-        </form>
+        {members.length === 0 ? (
+          <p className="muted-text">
+            Lege zuerst mindestens ein Profil in der Familie an, bevor du
+            Wünsche verteilst.
+          </p>
+        ) : (
+          <form className="form-stack" onSubmit={handleSubmit}>
+            <label>
+              Für wen?
+              <select
+                value={personId}
+                onChange={(event) => setPersonId(event.target.value)}
+                required
+              >
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.display_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Wunsch
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="z. B. Lego-Set"
+                required
+              />
+            </label>
+            <label>
+              Beschreibung
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Größe, Farbe, Idee ..."
+                rows={3}
+              />
+            </label>
+            <label>
+              Link
+              <input
+                value={link}
+                onChange={(event) => setLink(event.target.value)}
+                placeholder="https://..."
+                type="url"
+              />
+            </label>
+            <button className="primary-button" type="submit" disabled={busy}>
+              Wunsch speichern
+            </button>
+          </form>
+        )}
       </section>
 
       <section className="card overview-full-width">
