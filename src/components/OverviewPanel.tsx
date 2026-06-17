@@ -130,9 +130,9 @@ export function OverviewPanel({
       <section className="card">
         <div className="section-header stacked-mobile">
           <div>
-            <h2>Offene Einkaufsliste</h2>
+            <h2>Offene Einkaufslisten</h2>
             <p className="muted-text">
-              Was sollte als Nächstes besorgt werden?
+              Was sollte als Nächstes und in welchem Laden besorgt werden?
             </p>
           </div>
           <span className="pill">{openShoppingItems.length}</span>
@@ -149,6 +149,9 @@ export function OverviewPanel({
                 <article className="list-card" key={item.id}>
                   <div className="content-stack-sm">
                     <strong>{item.title}</strong>
+                    <div className="badge-row">
+                      <span className="pill">{item.list_name}</span>
+                    </div>
                     {item.notes && <p>{item.notes}</p>}
                   </div>
                   {assigned ? (

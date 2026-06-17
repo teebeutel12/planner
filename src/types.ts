@@ -40,6 +40,7 @@ export interface EventItem {
 export interface ShoppingItem {
   id: string;
   family_id: string;
+  list_name: string;
   title: string;
   notes: string | null;
   added_by: string;
@@ -71,6 +72,7 @@ export interface EventFormInput {
 }
 
 export interface ShoppingItemInput {
+  listName: string;
   title: string;
   notes: string;
   assignedTo: string;

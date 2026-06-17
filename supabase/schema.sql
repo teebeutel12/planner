@@ -41,6 +41,7 @@ create table if not exists public.events (
 create table if not exists public.shopping_items (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null references public.families (id) on delete cascade,
+  list_name text not null default 'Allgemein',
   title text not null,
   notes text,
   added_by uuid not null references public.profiles (id) on delete cascade,

@@ -206,6 +206,10 @@ function makeInviteCode() {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
 }
 
+function normalizeShoppingListName(listName: string) {
+  return listName.trim() || "Allgemein";
+}
+
 function buildEventPayload(
   input: EventFormInput,
   profileId: string,
@@ -1001,6 +1005,7 @@ export default function App() {
     await runAction(async () => {
       const { error } = await client.from("shopping_items").insert({
         family_id: family.id,
+        list_name: normalizeShoppingListName(input.listName),
         title: input.title.trim(),
         notes: input.notes.trim() || null,
         assigned_to: input.assignedTo || null,
@@ -1029,6 +1034,7 @@ export default function App() {
       const { error } = await client
         .from("shopping_items")
         .update({
+          list_name: normalizeShoppingListName(input.listName),
           title: input.title.trim(),
           notes: input.notes.trim() || null,
           assigned_to: input.assignedTo || null,

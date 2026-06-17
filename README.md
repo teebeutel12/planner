@@ -27,15 +27,16 @@ Eine Familien-App als MVP mit diesen Funktionen:
 3. Wenn dein Projekt das alte Schema schon hat, zusätzlich `supabase/migrations/20260612_planner_upgrade.sql` ausführen.
 4. Für die neuen Profileinstellungen zusätzlich `supabase/migrations/20260612_profile_settings_and_account.sql` ausführen.
 5. Für Mitgliederverwaltung und Owner-Transfer zusätzlich `supabase/migrations/20260612_family_management.sql` ausführen.
-6. `.env.example` nach `.env` kopieren.
-7. In `.env` die Werte für `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` eintragen.
-8. Abhängigkeiten installieren:
+6. Für mehrere Einkaufslisten/Läden zusätzlich `supabase/migrations/20260617_shopping_lists.sql` ausführen.
+7. `.env.example` nach `.env` kopieren.
+8. In `.env` die Werte für `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` eintragen.
+9. Abhängigkeiten installieren:
 
    ```bash
    npm install
    ```
 
-9. Entwicklungsserver starten:
+10. Entwicklungsserver starten:
 
    ```bash
    npm run dev
@@ -54,7 +55,7 @@ Eine Familien-App als MVP mit diesen Funktionen:
 - `families`: Familienkonto mit Einladungscode
 - `family_members`: Zuordnung von Personen zu einem Familienkonto
 - `events`: Termine mit Teilnehmerliste und optionaler Erinnerung
-- `shopping_items`: Einkaufsliste mit optionaler Zuständigkeit
+- `shopping_items`: Einkaufseinträge mit Listen-/Ladenname und optionaler Zuständigkeit
 - `wishes`: Wünsche je Person
 
 ## Deployment
